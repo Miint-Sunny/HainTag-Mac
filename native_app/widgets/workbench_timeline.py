@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QScrollAre
 
 from ..models import HistoryEntry
 from ..theme import _fs, current_palette
-from ..ui_tokens import _dp
+from ..ui_tokens import RAD_SM, RAD_XS, _dp, _rad
 
 
 class WorkbenchTimeline(QWidget):
@@ -222,16 +222,16 @@ class WorkbenchTimeline(QWidget):
             f"QLabel#WorkbenchTimelineCaret, QLabel#WorkbenchTimelineIcon {{ color: {pal['text_label']}; font-size: {_fs('fs_10')}; }}"
             f"QLabel#WorkbenchTimelineLabel {{ color: {pal['text_label']}; font-size: {_fs('fs_10')}; letter-spacing: 1px; }}"
             f"QLabel#WorkbenchTimelineCount {{ color: {pal['text_muted']}; font-size: {_fs('fs_10')}; }}"
-            f"QFrame#WorkbenchTimelineDot {{ background: {pal['line_strong']}; border-radius: {_dp(2)}px; }}"
+            f"QFrame#WorkbenchTimelineDot {{ background: {pal['line_strong']}; border-radius: {_rad(RAD_XS)}px; }}"
             f"QFrame#WorkbenchTimelineDot[current=\"true\"] {{ background: {pal['accent_text']}; }}"
             f"QFrame#WorkbenchTimelineDot[failed=\"true\"] {{ background: {pal['delete_hover']}; }}"
             f"QLabel#WorkbenchTimelineDivider {{ background: {pal['line']}; }}"
             f"QLabel#WorkbenchTimelineCurrent {{ color: {pal['text_muted']}; font-size: {_fs('fs_12')}; }}"
-            f"QPushButton#WorkbenchTimelineAction {{ background: transparent; color: {pal['text_label']}; border: none; border-radius: {_dp(3)}px; padding: {_dp(2)}px {_dp(6)}px; font-size: {_fs('fs_11')}; }}"
+            f"QPushButton#WorkbenchTimelineAction {{ background: transparent; color: {pal['text_label']}; border: none; border-radius: {_rad(RAD_XS)}px; padding: {_dp(2)}px {_dp(6)}px; font-size: {_fs('fs_11')}; }}"
             f"QPushButton#WorkbenchTimelineAction:hover {{ color: {pal['accent_text']}; background: {pal['accent_sub']}; }}"
             f"QScrollArea#WorkbenchTimelineExpanded {{ background: {pal['bg_card_strip']}; border-top: 1px solid {pal['line']}; }}"
             f"QWidget#WorkbenchTimelineCards {{ background: {pal['bg_card_strip']}; }}"
-            f"QWidget#WorkbenchTimelineCard {{ background: {pal['bg_surface']}; border: 1px solid {pal['line']}; border-radius: {_dp(5)}px; min-width: {_dp(160)}px; max-width: {_dp(180)}px; }}"
+            f"QWidget#WorkbenchTimelineCard {{ background: {pal['bg_surface']}; border: 1px solid {pal['line']}; border-radius: {_rad(RAD_SM)}px; min-width: {_dp(160)}px; max-width: {_dp(180)}px; }}"
             f"QLabel#WorkbenchTimelineCardTime {{ color: {pal['accent_text']}; font-size: {_fs('fs_10')}; }}"
             f"QLabel#WorkbenchTimelineCardPrompt {{ color: {pal['text']}; font-size: {_fs('fs_11')}; }}"
             f"QLabel#WorkbenchTimelineCardMeta {{ color: {pal['text_label']}; font-size: {_fs('fs_9')}; }}"

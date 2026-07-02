@@ -18,7 +18,7 @@ from PyQt6.QtWidgets import (
 
 from ..models import OCEntry
 from ..theme import _fs, current_palette
-from ..ui_tokens import _dp
+from ..ui_tokens import RAD_SM, RAD_XS, _dp, _rad
 from .text_context_menu import apply_app_menu_style
 
 
@@ -195,16 +195,16 @@ class _OCBubble(QFrame):
     def apply_style(self) -> None:
         pal = current_palette()
         self.setStyleSheet(
-            f"QFrame#WorkbenchOCBubble {{ background: {pal['bg_card']}; border: 1px solid {pal['line_strong']}; border-radius: {_dp(6)}px; }}"
+            f"QFrame#WorkbenchOCBubble {{ background: {pal['bg_card']}; border: 1px solid {pal['line_strong']}; border-radius: {_rad(RAD_SM)}px; }}"
             f"QWidget#WorkbenchOCBubbleHead, QWidget#WorkbenchOCBubbleSection {{ background: transparent; border-bottom: 1px solid {pal['line']}; }}"
             f"QLabel#WorkbenchOCBubbleAvatar {{ background: {pal['accent_sub']}; border: 1px solid {pal['accent_hover']}; border-radius: {_dp(16)}px; }}"
             f"QLabel#WorkbenchOCBubbleName {{ color: {pal['text']}; font-size: {_fs('fs_14')}; font-weight: 500; }}"
             f"QLabel#WorkbenchOCBubbleSub, QLabel#WorkbenchOCBubbleSectionLabel, QLabel#WorkbenchOCBubbleStepperLabel {{ color: {pal['text_label']}; font-size: {_fs('fs_10')}; }}"
-            f"QWidget#WorkbenchOCBubbleStepper {{ background: {pal['bg_input']}; border: 1px solid {pal['line']}; border-radius: {_dp(4)}px; }}"
+            f"QWidget#WorkbenchOCBubbleStepper {{ background: {pal['bg_input']}; border: 1px solid {pal['line']}; border-radius: {_rad(RAD_SM)}px; }}"
             f"QSpinBox {{ background: transparent; color: {pal['text']}; border: none; font-size: {_fs('fs_12')}; }}"
-            f"QPushButton#WorkbenchOCOutfitPill, QPushButton#WorkbenchOCBubbleButton {{ background: {pal['bg_input']}; color: {pal['text_body']}; border: 1px solid {pal['line']}; border-radius: {_dp(4)}px; padding: {_dp(4)}px {_dp(10)}px; font-size: {_fs('fs_11')}; }}"
-            f"QPushButton#WorkbenchOCOutfitPill[active=\"true\"], QPushButton#WorkbenchOCBubblePrimary {{ background: {pal['accent_sub']}; color: {pal['accent_text']}; border: 1px solid {pal['accent_hover']}; border-radius: {_dp(4)}px; padding: {_dp(6)}px; font-size: {_fs('fs_11')}; }}"
-            f"QLabel#WorkbenchOCBubbleTag {{ background: {pal['bg_input']}; color: {pal['text_body']}; border: 1px solid {pal['line']}; border-radius: {_dp(3)}px; padding: {_dp(2)}px {_dp(6)}px; font-size: {_fs('fs_10')}; }}"
+            f"QPushButton#WorkbenchOCOutfitPill, QPushButton#WorkbenchOCBubbleButton {{ background: {pal['bg_input']}; color: {pal['text_body']}; border: 1px solid {pal['line']}; border-radius: {_rad(RAD_SM)}px; padding: {_dp(4)}px {_dp(10)}px; font-size: {_fs('fs_11')}; }}"
+            f"QPushButton#WorkbenchOCOutfitPill[active=\"true\"], QPushButton#WorkbenchOCBubblePrimary {{ background: {pal['accent_sub']}; color: {pal['accent_text']}; border: 1px solid {pal['accent_hover']}; border-radius: {_rad(RAD_SM)}px; padding: {_dp(6)}px; font-size: {_fs('fs_11')}; }}"
+            f"QLabel#WorkbenchOCBubbleTag {{ background: {pal['bg_input']}; color: {pal['text_body']}; border: 1px solid {pal['line']}; border-radius: {_rad(RAD_XS)}px; padding: {_dp(2)}px {_dp(6)}px; font-size: {_fs('fs_10')}; }}"
         )
 
 
@@ -414,7 +414,7 @@ class WorkbenchOCStrip(QFrame):
         row.setStyleSheet(
             f"QLabel {{ color: {pal['text_label']}; font-size: {_fs('fs_10')}; }}"
             f"QSpinBox {{ background: {pal['bg_input']}; color: {pal['text']}; border: 1px solid {pal['line_strong']}; "
-            f"border-radius: {_dp(3)}px; padding: {_dp(2)}px {_dp(4)}px; font-size: {_fs('fs_10')}; }}"
+            f"border-radius: {_rad(RAD_XS)}px; padding: {_dp(2)}px {_dp(4)}px; font-size: {_fs('fs_10')}; }}"
         )
         action = QWidgetAction(menu)
         action.setDefaultWidget(row)
@@ -434,7 +434,7 @@ class WorkbenchOCStrip(QFrame):
             f"QLabel#WorkbenchOCDivider {{ background: {pal['line']}; }}"
             f"QLabel#WorkbenchOCEmpty {{ color: {pal['text_label']}; font-style: italic; font-size: {_fs('fs_11')}; padding-left: {_dp(4)}px; }}"
             f"QPushButton#WorkbenchOCChip {{ background: {pal['accent_sub']}; color: {pal['accent_text']}; "
-            f"border: 1px solid {pal['accent']}; border-radius: {_dp(4)}px; padding: {_dp(2)}px {_dp(8)}px; "
+            f"border: 1px solid {pal['accent']}; border-radius: {_rad(RAD_SM)}px; padding: {_dp(2)}px {_dp(8)}px; "
             f"font-size: {_fs('fs_10')}; text-align: left; }}"
             f"QPushButton#WorkbenchOCChip:hover {{ background: {pal['accent']}; border-color: {pal['accent_hover']}; }}"
             f"QPushButton#WorkbenchOCAdd {{ background: transparent; color: {pal['text_label']}; border: 1px dashed {pal['line_strong']}; "

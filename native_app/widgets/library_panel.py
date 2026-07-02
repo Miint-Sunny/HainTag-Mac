@@ -21,7 +21,7 @@ from ..i18n import Translator
 from ..models import ArtistEntry, OCEntry
 from ..storage import AppStorage
 from ..theme import _fs, current_palette
-from ..ui_tokens import _dp
+from ..ui_tokens import _dp, _rad, RAD_XS, RAD_SM
 from .common import ToggleSwitch
 
 SECTION_ARTIST = "artist"
@@ -41,7 +41,7 @@ def _pad(v: int, h: int) -> str:
 def _input_style(p: dict, fs: str = 'fs_10', padding: str | None = None) -> str:
     padding = padding or _pad(3, 6)
     return (f"background: {p['bg']}; color: {p['text']}; border: 1px solid {p['line']}; "
-            f"border-radius: {_dp(3)}px; padding: {padding}; font-size: {_fs(fs)};")
+            f"border-radius: {_rad(RAD_XS)}px; padding: {padding}; font-size: {_fs(fs)};")
 
 
 def _del_btn_style(p: dict, fs: str = 'fs_11') -> str:
@@ -55,8 +55,8 @@ def _arrow_style(p: dict) -> str:
 def _header_style(p: dict, expanded: bool) -> str:
     if expanded:
         return (f"background: {p['bg_surface']}; border: 1px solid {p['line']}; "
-                f"border-bottom: none; border-radius: 4px 4px 0 0;")
-    return f"background: {p['bg_surface']}; border: 1px solid {p['line']}; border-radius: 4px;"
+                f"border-bottom: none; border-radius: {_rad(RAD_SM)}px {_rad(RAD_SM)}px 0 0;")
+    return f"background: {p['bg_surface']}; border: 1px solid {p['line']}; border-radius: {_rad(RAD_SM)}px;"
 
 
 def _dim_label_style(p: dict) -> str:
@@ -110,7 +110,7 @@ class _RefImageGrid(QWidget):
         p = _p()
         self._add_btn.setStyleSheet(
             f"background: {p['bg_content']}; border: 1px dashed {p['line']}; "
-            f"border-radius: 4px; color: {p['text_dim']}; font-size: {_fs('fs_14')};"
+            f"border-radius: {_rad(RAD_SM)}px; color: {p['text_dim']}; font-size: {_fs('fs_14')};"
         )
 
     def set_paths(self, paths: list[str]):
@@ -135,7 +135,7 @@ class _RefImageGrid(QWidget):
                 thumb = QLabel(self)
                 thumb.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 thumb.setStyleSheet(
-                    f"background: {p['bg_content']}; border: 1px solid {p['line']}; border-radius: 4px;"
+                    f"background: {p['bg_content']}; border: 1px solid {p['line']}; border-radius: {_rad(RAD_SM)}px;"
                 )
                 thumb.setCursor(Qt.CursorShape.PointingHandCursor)
                 if os.path.isfile(path):
@@ -154,7 +154,7 @@ class _RefImageGrid(QWidget):
                 thumb.setFixedSize(ts, ts)
                 thumb.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 thumb.setStyleSheet(
-                    f"background: {p['bg_content']}; border: 1px solid {p['line']}; border-radius: 4px;"
+                    f"background: {p['bg_content']}; border: 1px solid {p['line']}; border-radius: {_rad(RAD_SM)}px;"
                 )
                 thumb.setCursor(Qt.CursorShape.PointingHandCursor)
                 if os.path.isfile(path):
@@ -214,7 +214,7 @@ class ArtistBanner(QWidget):
         self._header = QWidget(self)
         self._header.setCursor(Qt.CursorShape.PointingHandCursor)
         self._header.setStyleSheet(
-            f"background: {p['bg_surface']}; border: 1px solid {p['line']}; border-radius: 4px;"
+            f"background: {p['bg_surface']}; border: 1px solid {p['line']}; border-radius: {_rad(RAD_SM)}px;"
         )
         hl = QHBoxLayout(self._header)
         hl.setContentsMargins(_dp(10), _dp(6), _dp(6), _dp(6))
@@ -243,7 +243,7 @@ class ArtistBanner(QWidget):
         self._body = QWidget(self)
         self._body.setStyleSheet(
             f"background: {p['bg_content']}; border: 1px solid {p['line']}; "
-            f"border-top: none; border-radius: 0 0 4px 4px;"
+            f"border-top: none; border-radius: 0 0 {_rad(RAD_SM)}px {_rad(RAD_SM)}px;"
         )
         bl = QVBoxLayout(self._body)
         bl.setContentsMargins(_dp(8), _dp(6), _dp(8), _dp(8))
@@ -274,7 +274,7 @@ class ArtistBanner(QWidget):
         self._copy_btn.setFixedHeight(_dp(22))
         self._copy_btn.setStyleSheet(
             f"background: {p['accent']}; color: {p['accent_text']}; border: none; "
-            f"border-radius: 3px; padding: 0 10px; font-size: {_fs('fs_9')}; letter-spacing: 1px;"
+            f"border-radius: {_rad(RAD_XS)}px; padding: 0 10px; font-size: {_fs('fs_9')}; letter-spacing: 1px;"
         )
         self._copy_btn.clicked.connect(self._copy_string)
         string_row.addWidget(self._copy_btn)
@@ -294,14 +294,14 @@ class ArtistBanner(QWidget):
         self._name_label.setStyleSheet(f"color: {p['text']}; font-size: {_fs('fs_11')}; background: transparent; border: none;")
         self._body.setStyleSheet(
             f"background: {p['bg_content']}; border: 1px solid {p['line']}; "
-            f"border-top: none; border-radius: 0 0 4px 4px;"
+            f"border-top: none; border-radius: 0 0 {_rad(RAD_SM)}px {_rad(RAD_SM)}px;"
         )
         self._name_edit.setStyleSheet(_input_style(p))
         self._string_edit.setStyleSheet(_input_style(p))
         self._ref_grid._apply_btn_style()
         self._copy_btn.setStyleSheet(
             f"background: {p['accent']}; color: {p['accent_text']}; border: none; "
-            f"border-radius: 3px; padding: 0 10px; font-size: {_fs('fs_9')}; letter-spacing: 1px;"
+            f"border-radius: {_rad(RAD_XS)}px; padding: 0 10px; font-size: {_fs('fs_9')}; letter-spacing: 1px;"
         )
 
     def _toggle(self):
@@ -440,7 +440,7 @@ class OCBanner(QWidget):
         self._header = QWidget(self)
         self._header.setCursor(Qt.CursorShape.PointingHandCursor)
         self._header.setStyleSheet(
-            f"background: {p['bg_surface']}; border: 1px solid {p['line']}; border-radius: 4px;"
+            f"background: {p['bg_surface']}; border: 1px solid {p['line']}; border-radius: {_rad(RAD_SM)}px;"
         )
         hl = QHBoxLayout(self._header)
         hl.setContentsMargins(_dp(10), _dp(6), _dp(6), _dp(6))
@@ -474,7 +474,7 @@ class OCBanner(QWidget):
         self._body = QWidget(self)
         self._body.setStyleSheet(
             f"background: {p['bg_content']}; border: 1px solid {p['line']}; "
-            f"border-top: none; border-radius: 0 0 4px 4px;"
+            f"border-top: none; border-radius: 0 0 {_rad(RAD_SM)}px {_rad(RAD_SM)}px;"
         )
         bl = QVBoxLayout(self._body)
         bl.setContentsMargins(_dp(12), _dp(8), _dp(12), _dp(8))
@@ -546,7 +546,7 @@ class OCBanner(QWidget):
         add_outfit_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         add_outfit_btn.setStyleSheet(
             f"background: transparent; color: {p['text_dim']}; border: 1px solid {p['line']}; "
-            f"border-radius: 3px; font-size: {_fs('fs_12')};"
+            f"border-radius: {_rad(RAD_XS)}px; font-size: {_fs('fs_12')};"
         )
         add_outfit_btn.clicked.connect(self._add_outfit)
         outfit_header.addWidget(add_outfit_btn)
@@ -582,7 +582,7 @@ class OCBanner(QWidget):
         self._name_label.setStyleSheet(f"color: {p['text']}; font-size: {_fs('fs_11')}; background: transparent; border: none;")
         self._body.setStyleSheet(
             f"background: {p['bg_content']}; border: 1px solid {p['line']}; "
-            f"border-top: none; border-radius: 0 0 4px 4px;"
+            f"border-top: none; border-radius: 0 0 {_rad(RAD_SM)}px {_rad(RAD_SM)}px;"
         )
         self._name_edit.setStyleSheet(_input_style(p, 'fs_11', _pad(4, 8)))
         self._tags_edit.setStyleSheet(_input_style(p, 'fs_11', _pad(4, 8)))
@@ -820,7 +820,7 @@ class LibraryPanel(QWidget):
         )
         self._close_btn.setStyleSheet(
             f"color: {p['text_dim']}; background: transparent; border: none; "
-            f"border-radius: {_dp(3)}px; font-size: {_fs('fs_12')};"
+            f"border-radius: {_rad(RAD_XS)}px; font-size: {_fs('fs_12')};"
         )
         self._apply_strip_styles()
         self._apply_add_btn_styles()
@@ -833,11 +833,11 @@ class LibraryPanel(QWidget):
         p = _p()
         active = (
             f"background: {p['accent']}; color: {p['accent_text']}; border: 1px solid {p['accent']}; "
-            f"border-radius: {_dp(4)}px; padding: {_dp(6)}px {_dp(8)}px; font-size: {_fs('fs_10')}; font-weight: bold;"
+            f"border-radius: {_rad(RAD_SM)}px; padding: {_dp(6)}px {_dp(8)}px; font-size: {_fs('fs_10')}; font-weight: bold;"
         )
         normal = (
             f"background: {p['bg_surface']}; color: {p['text_dim']}; border: 1px solid {p['line']}; "
-            f"border-radius: {_dp(4)}px; padding: {_dp(6)}px {_dp(8)}px; font-size: {_fs('fs_10')};"
+            f"border-radius: {_rad(RAD_SM)}px; padding: {_dp(6)}px {_dp(8)}px; font-size: {_fs('fs_10')};"
         )
         self._artist_title_btn.setStyleSheet(
             active if self._current_section == SECTION_ARTIST else normal
@@ -850,7 +850,7 @@ class LibraryPanel(QWidget):
         p = _p()
         style = (
             f"background: {p['bg_surface']}; color: {p['text']}; border: 1px solid {p['line']}; "
-            f"border-radius: {_dp(4)}px; padding: {_dp(6)}px {_dp(8)}px; font-size: {_fs('fs_10')};"
+            f"border-radius: {_rad(RAD_SM)}px; padding: {_dp(6)}px {_dp(8)}px; font-size: {_fs('fs_10')};"
         )
         self._add_artist_btn.setStyleSheet(style)
         self._add_oc_btn.setStyleSheet(style)

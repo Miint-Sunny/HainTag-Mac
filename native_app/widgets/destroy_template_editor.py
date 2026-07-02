@@ -15,7 +15,7 @@ from PyQt6.QtWidgets import (
 
 from ..i18n import Translator
 from ..theme import _fs, current_palette
-from ..ui_tokens import _dp
+from ..ui_tokens import RAD_SM, _dp, _rad
 from .text_context_menu import install_localized_context_menus
 
 
@@ -53,7 +53,7 @@ class DestroyTemplateEditor(QDialog):
         add_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         add_btn.setStyleSheet(
             f"background: {p['accent']}; color: {p['accent_text']}; "
-            f"border: none; border-radius: 4px; font-size: {_fs('fs_12')}; font-weight: bold;"
+            f"border: none; border-radius: {_rad(RAD_SM)}px; font-size: {_fs('fs_12')}; font-weight: bold;"
         )
         add_btn.clicked.connect(self._add_template)
         left_header.addWidget(add_btn)
@@ -63,7 +63,7 @@ class DestroyTemplateEditor(QDialog):
         self._list = QListWidget(self)
         self._list.setStyleSheet(
             f"QListWidget {{ background: {p['bg_input']}; border: 1px solid {p['line']}; "
-            f"border-radius: 4px; font-size: {_fs('fs_10')}; }}"
+            f"border-radius: {_rad(RAD_SM)}px; font-size: {_fs('fs_10')}; }}"
             f"QListWidget::item {{ padding: 6px 8px; }}"
             f"QListWidget::item:selected {{ background: {p['accent']}; color: {p['accent_text']}; }}"
         )
@@ -74,7 +74,7 @@ class DestroyTemplateEditor(QDialog):
         del_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         del_btn.setStyleSheet(
             f"background: {p['delete_hover']}; color: {p['text']}; "
-            f"border: none; border-radius: 4px; padding: 4px 12px; font-size: {_fs('fs_10')};"
+            f"border: none; border-radius: {_rad(RAD_SM)}px; padding: 4px 12px; font-size: {_fs('fs_10')};"
         )
         del_btn.clicked.connect(self._delete_template)
         left.addWidget(del_btn)
@@ -92,7 +92,7 @@ class DestroyTemplateEditor(QDialog):
         self._name_edit = QLineEdit(self)
         self._name_edit.setStyleSheet(
             f"background: {p['bg_input']}; color: {p['text']}; "
-            f"border: 1px solid {p['line']}; border-radius: 4px; "
+            f"border: 1px solid {p['line']}; border-radius: {_rad(RAD_SM)}px; "
             f"padding: 4px 8px; font-size: {_fs('fs_11')};"
         )
         self._name_edit.textChanged.connect(self._on_name_changed)
@@ -105,7 +105,7 @@ class DestroyTemplateEditor(QDialog):
         self._text_edit = QTextEdit(self)
         self._text_edit.setStyleSheet(
             f"background: {p['bg_input']}; color: {p['text']}; "
-            f"border: 1px solid {p['line']}; border-radius: 4px; "
+            f"border: 1px solid {p['line']}; border-radius: {_rad(RAD_SM)}px; "
             f"padding: 6px 8px; font-size: {_fs('fs_10')};"
         )
         self._text_edit.textChanged.connect(self._on_text_changed)
@@ -119,7 +119,7 @@ class DestroyTemplateEditor(QDialog):
         cancel_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         cancel_btn.setStyleSheet(
             f"color: {p['text_dim']}; background: transparent; "
-            f"border: 1px solid {p['line']}; border-radius: 4px; "
+            f"border: 1px solid {p['line']}; border-radius: {_rad(RAD_SM)}px; "
             f"padding: 6px 16px; font-size: {_fs('fs_10')};"
         )
         cancel_btn.clicked.connect(self.reject)
@@ -129,7 +129,7 @@ class DestroyTemplateEditor(QDialog):
         save_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         save_btn.setStyleSheet(
             f"color: {p['accent_text']}; background: {p['accent']}; "
-            f"border: none; border-radius: 4px; "
+            f"border: none; border-radius: {_rad(RAD_SM)}px; "
             f"padding: 6px 20px; font-size: {_fs('fs_11')}; font-weight: bold;"
         )
         save_btn.clicked.connect(self.accept)

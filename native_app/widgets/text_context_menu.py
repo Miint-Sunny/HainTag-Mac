@@ -5,17 +5,17 @@ from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import QApplication, QLineEdit, QMenu, QTextEdit, QWidget
 
 from ..theme import _fs, current_palette
-from ..ui_tokens import _dp
+from ..ui_tokens import RAD_SM, _dp, _rad
 
 def apply_app_menu_style(menu: QMenu) -> None:
     """Apply the app palette to menus without hardcoded per-surface colors."""
     p = current_palette()
     menu.setStyleSheet(
         f"QMenu {{ background: {p['bg_menu']}; color: {p['text']}; "
-        f"border: 1px solid {p['line_strong']}; border-radius: {_dp(6)}px; "
+        f"border: 1px solid {p['line_strong']}; border-radius: {_rad(RAD_SM)}px; "
         f"padding: {_dp(5)}px; font-size: {_fs('fs_11')}; }}"
         f"QMenu::item {{ background: transparent; color: {p['text']}; "
-        f"padding: {_dp(6)}px {_dp(24)}px {_dp(6)}px {_dp(12)}px; border-radius: {_dp(4)}px; }}"
+        f"padding: {_dp(6)}px {_dp(24)}px {_dp(6)}px {_dp(12)}px; border-radius: {_rad(RAD_SM)}px; }}"
         f"QMenu::item:selected {{ background: {p['hover_bg_strong']}; color: {p['text']}; }}"
         f"QMenu::item:disabled {{ color: {p['disabled_text']}; }}"
         f"QMenu::separator {{ height: 1px; background: {p['line']}; margin: {_dp(5)}px {_dp(6)}px; }}"

@@ -25,7 +25,7 @@ from PyQt6.QtWidgets import (
 )
 
 from .theme import _fs, current_palette
-from .ui_tokens import _dp
+from .ui_tokens import RAD_SM, _dp, _rad
 from .widgets.text_context_menu import install_localized_context_menus
 
 _GITHUB_API = "https://api.github.com/repos/1756141021/HainTag/releases/latest"
@@ -458,7 +458,7 @@ class UpdateDialog(QDialog):
             cl_edit.setMaximumHeight(_dp(250))
             cl_edit.setStyleSheet(
                 f"background: {p['bg_input']}; color: {p['text']}; "
-                f"border: 1px solid {p['line']}; border-radius: {_dp(4)}px; "
+                f"border: 1px solid {p['line']}; border-radius: {_rad(RAD_SM)}px; "
                 f"font-size: {_fs('fs_10')}; padding: {_dp(8)}px;"
             )
             layout.addWidget(cl_edit)
@@ -474,7 +474,7 @@ class UpdateDialog(QDialog):
         skip_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         skip_btn.setStyleSheet(
             f"color: {p['text_dim']}; background: transparent; "
-            f"border: 1px solid {p['line']}; border-radius: {_dp(4)}px; "
+            f"border: 1px solid {p['line']}; border-radius: {_rad(RAD_SM)}px; "
             f"padding: {_dp(6)}px {_dp(16)}px; font-size: {_fs('fs_10')};"
         )
         skip_btn.clicked.connect(self._on_skip)
@@ -484,7 +484,7 @@ class UpdateDialog(QDialog):
         later_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         later_btn.setStyleSheet(
             f"color: {p['text']}; background: transparent; "
-            f"border: 1px solid {p['line']}; border-radius: {_dp(4)}px; "
+            f"border: 1px solid {p['line']}; border-radius: {_rad(RAD_SM)}px; "
             f"padding: {_dp(6)}px {_dp(16)}px; font-size: {_fs('fs_10')};"
         )
         later_btn.clicked.connect(self._on_later)
@@ -494,7 +494,7 @@ class UpdateDialog(QDialog):
         update_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         update_btn.setStyleSheet(
             f"color: {p['accent_text']}; background: {p['accent']}; "
-            f"border: none; border-radius: {_dp(4)}px; "
+            f"border: none; border-radius: {_rad(RAD_SM)}px; "
             f"padding: {_dp(6)}px {_dp(20)}px; font-size: {_fs('fs_11')}; font-weight: bold;"
         )
         update_btn.clicked.connect(self._on_update)
@@ -526,7 +526,7 @@ class UpdateDialog(QDialog):
         self._cancel_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._cancel_btn.setStyleSheet(
             f"color: {p['text']}; background: transparent; "
-            f"border: 1px solid {p['line']}; border-radius: {_dp(4)}px; "
+            f"border: 1px solid {p['line']}; border-radius: {_rad(RAD_SM)}px; "
             f"padding: {_dp(6)}px {_dp(16)}px; font-size: {_fs('fs_10')};"
         )
         self._cancel_btn.clicked.connect(self._on_cancel)
@@ -591,7 +591,7 @@ class UpdateDialog(QDialog):
         close_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         close_btn.setStyleSheet(
             f"color: {p['text']}; background: transparent; "
-            f"border: 1px solid {p['line']}; border-radius: {_dp(4)}px; "
+            f"border: 1px solid {p['line']}; border-radius: {_rad(RAD_SM)}px; "
             f"padding: {_dp(6)}px {_dp(16)}px; font-size: {_fs('fs_10')};"
         )
         close_btn.clicked.connect(self.reject)
@@ -637,7 +637,7 @@ class NoUpdateDialog(QDialog):
         ok_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         ok_btn.setStyleSheet(
             f"color: {p['text']}; background: {p['accent']}; "
-            f"border: none; border-radius: {_dp(4)}px; padding: {_dp(6)}px {_dp(20)}px; font-size: {_fs('fs_10')};"
+            f"border: none; border-radius: {_rad(RAD_SM)}px; padding: {_dp(6)}px {_dp(20)}px; font-size: {_fs('fs_10')};"
         )
         ok_btn.clicked.connect(self.accept)
         layout.addWidget(ok_btn, alignment=Qt.AlignmentFlag.AlignCenter)

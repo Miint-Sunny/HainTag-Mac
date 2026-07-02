@@ -4,7 +4,7 @@ from PyQt6.QtCore import QEvent, QPoint, QRect, QSize, Qt, pyqtSignal
 from PyQt6.QtWidgets import QFrame, QPushButton, QVBoxLayout, QWidget
 
 from ..theme import _fs, current_palette
-from ..ui_tokens import WIDGET_RESIZE_CORNER, WIDGET_RESIZE_EDGE, WIDGET_RESIZE_HINT, _dp
+from ..ui_tokens import WIDGET_RESIZE_CORNER, WIDGET_RESIZE_EDGE, WIDGET_RESIZE_HINT, RAD_SM, _dp, _rad
 
 from PyQt6.QtWidgets import QLabel
 from .common import compute_resized_rect
@@ -322,10 +322,10 @@ class WidgetCard(QFrame):
             color = p['accent_text'] if self._pinned else p['text_muted']
             bg = p['accent'] if self._pinned else 'transparent'
             self._pin_btn.setStyleSheet(
-                f"color: {color}; background: {bg}; border: none; border-radius: {_dp(3)}px; padding: 0 {_dp(4)}px; font-size: {_fs('fs_12')};"
+                f"color: {color}; background: {bg}; border: none; border-radius: {_rad(RAD_SM)}px; padding: 0 {_dp(4)}px; font-size: {_fs('fs_12')};"
             )
             self._close_btn.setStyleSheet(
-                f"color: {p['text_muted']}; background: transparent; border: none; border-radius: {_dp(3)}px; font-size: {_fs('fs_12')};"
+                f"color: {p['text_muted']}; background: transparent; border: none; border-radius: {_rad(RAD_SM)}px; font-size: {_fs('fs_12')};"
             )
             self._pin_btn.setText('●' if self._pinned else '○')
             self._pin_btn.setToolTip(self._pin_off_title if self._pinned else self._pin_on_title)
@@ -334,7 +334,7 @@ class WidgetCard(QFrame):
         bg = p['accent'] if self._pinned else 'transparent'
         border = p['accent'] if self._pinned else 'transparent'
         self._pin_btn.setStyleSheet(
-            f"color: {color}; background: {bg}; border: 1px solid {border}; border-radius: {_dp(4)}px; padding: 0 {_dp(4)}px; font-size: {_fs('fs_12')};"
+            f"color: {color}; background: {bg}; border: 1px solid {border}; border-radius: {_rad(RAD_SM)}px; padding: 0 {_dp(4)}px; font-size: {_fs('fs_12')};"
         )
         self._close_btn.setStyleSheet(
             f"color: {p['text_dim']}; background: transparent; border: none; font-size: {_fs('fs_12')};"

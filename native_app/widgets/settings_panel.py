@@ -43,8 +43,11 @@ from ..ui_tokens import (
     CLS_FIELD_SPIN,
     CLS_SLIDER_VALUE,
     CLS_SUMMARY_TEXT,
+    RAD_MD,
+    RAD_SM,
     SETTINGS_WIDTH,
     _dp,
+    _rad,
 )
 from .common import ToggleSwitch
 
@@ -401,7 +404,7 @@ class SettingsPanel(QWidget):
         dlg.setFixedWidth(_dp(360))
         dlg.setStyleSheet(
             f"QDialog#PopupPanel {{ background: {pal['bg_surface']}; "
-            f"border: 1px solid {pal['line_hover']}; border-radius: 10px; }}"
+            f"border: 1px solid {pal['line_hover']}; border-radius: {_rad(RAD_MD)}px; }}"
         )
 
         layout = QVBoxLayout(dlg)
@@ -428,7 +431,7 @@ class SettingsPanel(QWidget):
             card = QWidget(dlg)
             card.setStyleSheet(
                 f"background: {pal['bg_input']}; "
-                f"border: 1px solid {pal['line']}; border-radius: 6px;"
+                f"border: 1px solid {pal['line']}; border-radius: {_rad(RAD_SM)}px;"
             )
             card_layout = QVBoxLayout(card)
             card_layout.setContentsMargins(_dp(10), _dp(8), _dp(10), _dp(8))

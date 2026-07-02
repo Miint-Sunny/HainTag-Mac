@@ -130,13 +130,13 @@ QWidget {{
 #WindowSurface {{
     background: {bg};
     border: 1px solid {line};
-    border-radius: 12px;
+    border-radius: {rad_md};
 }}
 
 #ContentHost {{
     background: {bg_content};
-    border-bottom-left-radius: 12px;
-    border-bottom-right-radius: 12px;
+    border-bottom-left-radius: {rad_md};
+    border-bottom-right-radius: {rad_md};
 }}
 
 #Workspace {{
@@ -161,8 +161,8 @@ QWidget {{
     color: {text_dim};
     border: 1px solid {line};
     border-right: none;
-    border-top-left-radius: 6px;
-    border-bottom-left-radius: 6px;
+    border-top-left-radius: {rad_sm};
+    border-bottom-left-radius: {rad_sm};
     border-top-right-radius: 0px;
     border-bottom-right-radius: 0px;
     font-size: {fs_9};
@@ -178,8 +178,8 @@ QWidget {{
     color: {text_dim};
     border: 1px solid {line_strong};
     border-left: none;
-    border-top-right-radius: 4px;
-    border-bottom-right-radius: 4px;
+    border-top-right-radius: {rad_sm};
+    border-bottom-right-radius: {rad_sm};
     border-top-left-radius: 0px;
     border-bottom-left-radius: 0px;
     font-size: {fs_9};
@@ -193,8 +193,8 @@ QWidget {{
 
 #TitleBar {{
     background: {bg_titlebar};
-    border-top-left-radius: 12px;
-    border-top-right-radius: 12px;
+    border-top-left-radius: {rad_md};
+    border-top-right-radius: {rad_md};
     border-bottom: 1px solid {line};
 }}
 
@@ -210,7 +210,7 @@ QPushButton[class="DockItemButton"],
 QPushButton#TitleBarButton {{
     background: transparent;
     border: none;
-    border-radius: 4px;
+    border-radius: {rad_sm};
     color: {text_dim};
     font-size: {fs_12};
     min-width: 26px;
@@ -238,13 +238,13 @@ QPushButton#CloseButton:hover {{
 #DockPanel {{
     background: {bg_dock};
     border: 1px solid {line};
-    border-radius: 10px;
+    border-radius: {rad_md};
 }}
 
 QPushButton#DockToggle {{
     background: transparent;
     border: none;
-    border-radius: 4px;
+    border-radius: {rad_sm};
     color: {text_dim};
     font-size: {fs_12};
     min-width: 20px;
@@ -274,7 +274,7 @@ QPushButton[class="DockItemButton"] {{
 #DockEdgeHandle,
 #DockCornerHandle {{
     background: transparent;
-    border-radius: 3px;
+    border-radius: {rad_xs};
 }}
 
 #DockCornerHandle[visualHint="true"] {{
@@ -290,14 +290,14 @@ QPushButton[class="DockItemButton"] {{
 #DockPreview {{
     background: {dock_preview};
     border: 1px solid {dock_preview_border};
-    border-radius: 8px;
+    border-radius: {rad_sm};
 }}
 
 /* ── Widget Cards ── */
 #WidgetCard {{
     background: {bg_card};
-    border: 1px solid {line};
-    border-radius: 10px;
+    border: 1px solid {line_strong};
+    border-radius: {rad_md};
 }}
 
 #WidgetCard:hover {{
@@ -306,8 +306,8 @@ QPushButton[class="DockItemButton"] {{
 
 #WidgetDragStrip {{
     background: {bg_card_strip};
-    border-top-left-radius: 10px;
-    border-top-right-radius: 10px;
+    /* No corner radius: the strip is a plain rectangle INSIDE the card, so the
+       card's own rounded corner is the single antialiased edge (was doubled). */
     border-bottom: 1px solid {line};
 }}
 
@@ -319,7 +319,7 @@ QPushButton#WidgetGrip {{
     color: {text_dim};
     border: none;
     background: transparent;
-    border-radius: 8px;
+    border-radius: {rad_sm};
     font-size: {fs_12};
     font-weight: 500;
 }}
@@ -328,7 +328,7 @@ QPushButton#WidgetResizeHandle {{
     color: {text_dim};
     border: none;
     background: {hover_bg};
-    border-radius: 6px;
+    border-radius: {rad_sm};
     font-size: {fs_10};
     font-weight: 500;
 }}
@@ -368,7 +368,7 @@ QTextEdit[class="OutputEditor"],
 QTextEdit[class="MetadataText"] {{
     background: {bg_input};
     border: 1px solid {line};
-    border-radius: 6px;
+    border-radius: {rad_sm};
     color: {text_body};
     font-size: {fs_13};
     padding: 6px 8px;
@@ -438,7 +438,7 @@ QPushButton#PrimaryIconButton,
 QPushButton#GhostButton,
 QPushButton#SecondaryButton,
 QPushButton#PrimaryButton {{
-    border-radius: 6px;
+    border-radius: {rad_sm};
     min-height: 30px;
     padding: 4px 10px;
 }}
@@ -512,7 +512,7 @@ QPushButton:disabled {{
 #SettingsPanel {{
     background: {bg_settings};
     border: 1px solid {line};
-    border-radius: 12px;
+    border-radius: {rad_md};
 }}
 
 #PanelHeader {{
@@ -526,7 +526,7 @@ QPushButton:disabled {{
 QFrame[class="PromptEntryFrame"] {{
     background: {bg_prompt};
     border: 1px solid {line};
-    border-radius: 7px;
+    border-radius: {rad_sm};
 }}
 
 QFrame[class="PromptEntryFrame"]:hover {{
@@ -535,8 +535,8 @@ QFrame[class="PromptEntryFrame"]:hover {{
 
 QWidget[class="PromptEntryHeader"] {{
     background: transparent;
-    border-top-left-radius: 7px;
-    border-top-right-radius: 7px;
+    border-top-left-radius: {rad_sm};
+    border-top-right-radius: {rad_sm};
 }}
 
 QFrame[class="PromptEntryFrame"][expanded="true"] QWidget[class="PromptEntryHeader"] {{
@@ -546,8 +546,8 @@ QFrame[class="PromptEntryFrame"][expanded="true"] QWidget[class="PromptEntryHead
 QWidget[class="PromptEntryBody"] {{
     background: transparent;
     border-top: 1px solid {line};
-    border-bottom-left-radius: 7px;
-    border-bottom-right-radius: 7px;
+    border-bottom-left-radius: {rad_sm};
+    border-bottom-right-radius: {rad_sm};
 }}
 
 QFrame[class="PromptEntryFrame"] QLineEdit[class="FieldInput"],
@@ -565,7 +565,7 @@ QFrame[class="PromptEntryFrame"] QTextEdit[class="PromptTextEdit"] {{
 QWidget[class="ExampleFrame"] {{
     background: {bg_prompt};
     border: 1px solid {line};
-    border-radius: 6px;
+    border-radius: {rad_sm};
 }}
 
 QWidget[class="ExampleFrame"]:hover {{
@@ -576,7 +576,7 @@ QPushButton[class="PromptDeleteButton"],
 QPushButton[class="ExampleDeleteButton"] {{
     background: transparent;
     border: none;
-    border-radius: 4px;
+    border-radius: {rad_sm};
     color: {text_dim};
 }}
 
@@ -626,7 +626,7 @@ QFrame[class="PromptEntryFrame"][expanded="true"] QLabel[class="PromptExpandIndi
 
 QPushButton[class="ImageSelectButton"] {{
     border: 1px dashed {line_hover};
-    border-radius: 6px;
+    border-radius: {rad_sm};
     background: {bg_input};
     color: {text_muted};
     font-size: {fs_12};
@@ -662,7 +662,7 @@ QScrollBar:vertical {{
 
 QScrollBar::handle:vertical {{
     background: {scrollbar};
-    border-radius: 2px;
+    border-radius: {rad_xs};
     min-height: 24px;
 }}
 
@@ -673,7 +673,7 @@ QScrollBar:horizontal {{
 
 QScrollBar::handle:horizontal {{
     background: {scrollbar};
-    border-radius: 2px;
+    border-radius: {rad_xs};
     min-width: 24px;
 }}
 
@@ -692,19 +692,19 @@ QScrollBar::sub-page:horizontal {{
 
 QSlider::groove:horizontal {{
     height: 4px;
-    border-radius: 2px;
+    border-radius: {rad_xs};
     background: {slider_groove};
 }}
 
 QSlider::sub-page:horizontal {{
-    border-radius: 2px;
+    border-radius: {rad_xs};
     background: {slider_sub};
 }}
 
 QSlider::handle:horizontal {{
     width: 14px;
     margin: -5px 0;
-    border-radius: 7px;
+    border-radius: 7px;  /* == half of the 14px handle: keep the knob circular */
     background: {accent_handle};
 }}
 
@@ -712,13 +712,13 @@ QSlider::handle:horizontal {{
 QMenu {{
     background: {bg_menu};
     border: 1px solid {line_hover};
-    border-radius: 8px;
+    border-radius: {rad_sm};
     padding: 6px;
 }}
 
 QMenu::item {{
     background: transparent;
-    border-radius: 6px;
+    border-radius: {rad_sm};
     padding: 7px 12px;
     color: {text_body};
 }}
@@ -768,7 +768,7 @@ QToolTip {{
     color: {text_dim};
     background: {bg_surface};
     border: 1px solid {line};
-    border-radius: 8px;
+    border-radius: {rad_sm};
     font-size: {fs_10};
     padding: 0;
 }}
@@ -793,7 +793,7 @@ QSplitter::handle:vertical:hover {{
 #PopupPanel {{
     background: {bg_surface};
     border: 1px solid {line_hover};
-    border-radius: 10px;
+    border-radius: {rad_md};
 }}
 
 #PopupPanel QLabel {{
@@ -810,7 +810,7 @@ QSplitter::handle:vertical:hover {{
     max-width: 20px;
     min-height: 20px;
     max-height: 20px;
-    border-radius: 4px;
+    border-radius: {rad_sm};
 }}
 
 #PopupPanel QPushButton#PopupClose:hover {{
@@ -821,7 +821,7 @@ QSplitter::handle:vertical:hover {{
 #PopupPanel QPushButton#PopupBtn {{
     background: {hover_bg_strong};
     border: 1px solid {line};
-    border-radius: 6px;
+    border-radius: {rad_sm};
     color: {text_muted};
     padding: 6px 20px;
     font-size: {fs_12};
@@ -834,26 +834,26 @@ QSplitter::handle:vertical:hover {{
 
 #PopupPanel QSlider::groove:horizontal {{
     height: 4px;
-    border-radius: 2px;
+    border-radius: {rad_xs};
     background: {slider_groove};
 }}
 
 #PopupPanel QSlider::sub-page:horizontal {{
-    border-radius: 2px;
+    border-radius: {rad_xs};
     background: {slider_sub};
 }}
 
 #PopupPanel QSlider::handle:horizontal {{
     width: 14px;
     margin: -5px 0;
-    border-radius: 7px;
+    border-radius: 7px;  /* == half of the 14px handle: keep the knob circular */
     background: {accent_handle};
 }}
 
 #PopupPanel QListWidget {{
     background: {bg_input};
     border: 1px solid {line};
-    border-radius: 8px;
+    border-radius: {rad_sm};
     color: {text_body};
     font-size: {fs_13};
     padding: 4px;
@@ -861,7 +861,7 @@ QSplitter::handle:vertical:hover {{
 
 #PopupPanel QListWidget::item {{
     padding: 8px 12px;
-    border-radius: 6px;
+    border-radius: {rad_sm};
     margin: 2px 0;
 }}
 
@@ -876,7 +876,7 @@ QSplitter::handle:vertical:hover {{
 #PopupPanel QSpinBox {{
     background: {bg_input};
     border: 1px solid {line};
-    border-radius: 6px;
+    border-radius: {rad_sm};
     color: {text_body};
     font-size: {fs_13};
     padding: 4px 8px;
@@ -1019,6 +1019,13 @@ def generate_qss(theme: str = 'dark', custom_palette: dict[str, str] | None = No
     palette['fs_12'] = f'{bp + 1}px'           # 12px@11 — buttons, fields
     palette['fs_13'] = f'{bp + 2}px'           # 13px@11 — emphasis
     palette['fs_14'] = f'{bp + 3}px'           # 14px@11 — titles
+
+    # Corner-radius tokens — one "subtle round" scale for the whole QSS.
+    # Plain 'Npx' strings so scale_qss()'s UI-scale regex tracks them like fs_*.
+    palette['rad_none'] = '0px'
+    palette['rad_xs'] = '2px'
+    palette['rad_sm'] = '6px'
+    palette['rad_md'] = '10px'
 
     # 仅覆盖 alpha 以应用用户设置的卡片透明度，RGB 保留插值结果实现平滑过渡
     opacity = max(30, min(100, card_opacity)) / 100.0

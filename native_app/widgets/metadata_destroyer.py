@@ -35,7 +35,7 @@ from ..i18n import Translator
 from ..file_filters import png_filter
 from ..metadata import MetadataWriter
 from ..theme import _fs, current_palette
-from ..ui_tokens import CLS_METADATA_FRAME, CLS_METADATA_RESULT_ITEM, _dp
+from ..ui_tokens import CLS_METADATA_FRAME, CLS_METADATA_RESULT_ITEM, RAD_SM, _dp, _rad
 from .text_context_menu import apply_app_menu_style, install_localized_context_menus
 
 
@@ -270,7 +270,7 @@ class MetadataDestroyerWidget(QWidget):
         pal = _palette()
         from PyQt6.QtCore import QRectF
         p.setPen(QPen(QColor(pal['text_dim']), 2, Qt.PenStyle.DashLine))
-        p.drawRoundedRect(QRectF(self.rect()).adjusted(8, 8, -8, -8), 8, 8)
+        p.drawRoundedRect(QRectF(self.rect()).adjusted(8, 8, -8, -8), _rad(RAD_SM), _rad(RAD_SM))
         p.setPen(QColor(pal['text_muted']))
         font = p.font()
         font.setPointSize(12)
