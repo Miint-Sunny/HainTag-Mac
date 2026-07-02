@@ -284,9 +284,20 @@ class MainWindow(QWidget):
         self._settings_anim.finished.connect(self._finish_settings_animation)
 
         self.setObjectName('AppWindow')
-        # macOS: keep the native title bar so traffic lights / native resize / tiling work.
-        # Plan B fallback for v1 — the transparent-titlebar route is deferred to a later PR.
-        if sys.platform == 'darwin':
+        # macOS: Qt 6.9+ expanded client area — content extends under the native
+        # titlebar while the traffic lights stay native, so the former "double bar"
+        # collapses into our own title_bar (QTBUG-133215 is fixed in bundled Qt).
+        # HAINTAG_MAC_CLASSIC=1 falls back to the stock native title bar.
+        self._mac_expanded = sys.platform == 'darwin' and os.environ.get('HAINTAG_MAC_CLASSIC') != '1'
+        if self._mac_expanded:
+            self.setWindowFlags(
+                Qt.WindowType.Window
+                | Qt.WindowType.ExpandedClientAreaHint
+                | Qt.WindowType.NoTitleBarBackgroundHint
+            )
+            # Shell geometry is manual; keep safe-area insets out of layout margins.
+            self.setAttribute(Qt.WidgetAttribute.WA_ContentsMarginsRespectsSafeArea, False)
+        elif sys.platform == 'darwin':
             self.setWindowFlags(Qt.WindowType.Window)
         else:
             self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Window)
@@ -306,6 +317,14 @@ class MainWindow(QWidget):
         self.title_bar.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.title_bar.setCursor(Qt.CursorShape.OpenHandCursor)
         self.title_bar.installEventFilter(self)
+        if self._mac_expanded:
+            # Traffic lights overlay our bar's (empty) left end; don't let the
+            # safe-area inset distort the bar's own layout.
+            self.surface.setAttribute(Qt.WidgetAttribute.WA_ContentsMarginsRespectsSafeArea, False)
+            self.title_bar.setAttribute(Qt.WidgetAttribute.WA_ContentsMarginsRespectsSafeArea, False)
+            # Surface fills the window edge-to-edge; the native window mask rounds
+            # the corners, so the inset chrome (1px border + 12px radius) must go.
+            self.surface.setStyleSheet('#WindowSurface { border: none; border-radius: 0px; }')
         title_layout = QHBoxLayout(self.title_bar)
         title_layout.setContentsMargins(_dp(12), _dp(6), _dp(12), _dp(6))
         title_layout.setSpacing(2)
@@ -1705,7 +1724,10 @@ class MainWindow(QWidget):
             return
         self._applying_shell_layout = True
         try:
-            outer = self.rect().adjusted(WINDOW_SURFACE_MARGIN, WINDOW_SURFACE_MARGIN, -WINDOW_SURFACE_MARGIN, -WINDOW_SURFACE_MARGIN)
+            # Expanded mode: the surface IS the window face — no inset band needed
+            # (that 8px band exists for the Windows frameless shadow/resize zone).
+            margin = 0 if self._mac_expanded else WINDOW_SURFACE_MARGIN
+            outer = self.rect().adjusted(margin, margin, -margin, -margin)
             self.surface.setGeometry(outer)
             self.title_bar.setGeometry(0, 0, outer.width(), TITLEBAR_HEIGHT)
             self.content_host.setGeometry(0, TITLEBAR_HEIGHT, outer.width(), outer.height() - TITLEBAR_HEIGHT)
