@@ -256,19 +256,12 @@ class Workspace(QWidget):
             dock_rect = dock_info.rect
             card_rect = QRect(card.mapToGlobal(card.rect().topLeft()), card.size())
             sense = 30
-            should_dock = False
-            if dock_info.position == "floating":
-                expanded = dock_rect.adjusted(-sense, -sense, sense, sense)
-                should_dock = expanded.intersects(card_rect)
-            elif dock_info.position == "left":
-                should_dock = card_rect.left() < dock_rect.right() + sense
-            elif dock_info.position == "right":
-                should_dock = card_rect.right() > dock_rect.left() - sense
-            elif dock_info.position == "top":
-                should_dock = card_rect.top() < dock_rect.bottom() + sense
-            elif dock_info.position == "bottom":
-                should_dock = card_rect.bottom() > dock_rect.top() - sense
-            if should_dock:
+            # Dock only when the card actually overlaps the (slightly expanded)
+            # dock band. The former per-edge half-plane tests compared GLOBAL
+            # coords, so a floated-out card released anywhere in that half of
+            # the screen (or on an adjacent display) was vacuumed into the dock.
+            expanded = dock_rect.adjusted(-sense, -sense, sense, sense)
+            if expanded.intersects(card_rect):
                 self.dock_requested.emit(widget_id)
                 return
         self.resolve_overlap(card)
