@@ -87,7 +87,10 @@ from .ui_tokens import (
     WINDOW_EDGE_GAP,
     WINDOW_SURFACE_MARGIN,
     WINDOW_VISIBLE_RESIZE_BAND,
+    RAD_MD,
+    RAD_SM,
     _dp,
+    _rad,
 )
 from .widgets.dock import DockPanel
 from .widgets.example_widget import ExampleWidget
@@ -428,13 +431,13 @@ class MainWindow(QWidget):
         self.main_card.set_workbench_chrome(True)
         pal = current_palette()
         self.main_card.setStyleSheet(
-            f"#WidgetCard {{ background: {pal['bg_card']}; border: 1px solid {pal['line_hover']}; border-radius: {_dp(4)}px; }}"
+            f"#WidgetCard {{ background: {pal['bg_card']}; border: 1px solid {pal['line_hover']}; border-radius: {_rad(RAD_MD)}px; }}"
             f"#WidgetCard:hover {{ border-color: {pal['line_strong']}; }}"
-            f"#WidgetDragStrip {{ background: {pal['bg_card_strip']}; border-top-left-radius: {_dp(4)}px; border-top-right-radius: {_dp(4)}px; border-bottom: 1px solid {pal['line']}; }}"
+            f"#WidgetDragStrip {{ background: {pal['bg_card_strip']}; border-bottom: 1px solid {pal['line']}; }}"
             f"#WidgetDragStrip:hover {{ background: {pal['bg_card_strip_hover']}; }}"
-            f"QPushButton#WidgetGrip {{ color: {pal['text_dim']}; background: transparent; border: none; border-radius: {_dp(3)}px; font-size: {_fs('fs_13')}; }}"
+            f"QPushButton#WidgetGrip {{ color: {pal['text_dim']}; background: transparent; border: none; border-radius: {_rad(RAD_SM)}px; font-size: {_fs('fs_13')}; }}"
             f"QPushButton#WidgetGrip:hover {{ background: {pal['hover_bg_strong']}; color: {pal['text_muted']}; }}"
-            f"QPushButton#WidgetCloseBtn, QPushButton#WidgetPinBtn {{ background: transparent; border: none; color: {pal['text_muted']}; border-radius: {_dp(3)}px; font-size: {_fs('fs_12')}; }}"
+            f"QPushButton#WidgetCloseBtn, QPushButton#WidgetPinBtn {{ background: transparent; border: none; color: {pal['text_muted']}; border-radius: {_rad(RAD_SM)}px; font-size: {_fs('fs_12')}; }}"
             f"QPushButton#WidgetCloseBtn:hover, QPushButton#WidgetPinBtn:hover {{ background: {pal['hover_bg_strong']}; color: {pal['text']}; }}"
             f"QPushButton#WidgetResizeHandle {{ color: {pal['text_label']}; background: transparent; border: none; font-size: {_fs('fs_9')}; }}"
         )
@@ -883,13 +886,13 @@ class MainWindow(QWidget):
         pal = current_palette()
         if hasattr(self, "main_card") and self.main_card is not None:
             self.main_card.setStyleSheet(
-                f"#WidgetCard {{ background: {pal['bg_card']}; border: 1px solid {pal['line_hover']}; border-radius: {_dp(4)}px; }}"
+                f"#WidgetCard {{ background: {pal['bg_card']}; border: 1px solid {pal['line_hover']}; border-radius: {_rad(RAD_MD)}px; }}"
                 f"#WidgetCard:hover {{ border-color: {pal['line_strong']}; }}"
-                f"#WidgetDragStrip {{ background: {pal['bg_card_strip']}; border-top-left-radius: {_dp(4)}px; border-top-right-radius: {_dp(4)}px; border-bottom: 1px solid {pal['line']}; }}"
+                f"#WidgetDragStrip {{ background: {pal['bg_card_strip']}; border-bottom: 1px solid {pal['line']}; }}"
                 f"#WidgetDragStrip:hover {{ background: {pal['bg_card_strip_hover']}; }}"
-                f"QPushButton#WidgetGrip {{ color: {pal['text_dim']}; background: transparent; border: none; border-radius: {_dp(3)}px; font-size: {_fs('fs_13')}; }}"
+                f"QPushButton#WidgetGrip {{ color: {pal['text_dim']}; background: transparent; border: none; border-radius: {_rad(RAD_SM)}px; font-size: {_fs('fs_13')}; }}"
                 f"QPushButton#WidgetGrip:hover {{ background: {pal['hover_bg_strong']}; color: {pal['text_muted']}; }}"
-                f"QPushButton#WidgetCloseBtn, QPushButton#WidgetPinBtn {{ background: transparent; border: none; color: {pal['text_muted']}; border-radius: {_dp(3)}px; font-size: {_fs('fs_12')}; }}"
+                f"QPushButton#WidgetCloseBtn, QPushButton#WidgetPinBtn {{ background: transparent; border: none; color: {pal['text_muted']}; border-radius: {_rad(RAD_SM)}px; font-size: {_fs('fs_12')}; }}"
                 f"QPushButton#WidgetCloseBtn:hover, QPushButton#WidgetPinBtn:hover {{ background: {pal['hover_bg_strong']}; color: {pal['text']}; }}"
                 f"QPushButton#WidgetResizeHandle {{ color: {pal['text_label']}; background: transparent; border: none; font-size: {_fs('fs_9')}; }}"
             )
@@ -899,7 +902,7 @@ class MainWindow(QWidget):
                 f"QWidget#WorkbenchBottomPanel {{ background: {pal['bg_card_strip']}; }}"
                 f"QSplitter#WorkbenchMainSplitter {{ background: {pal['bg_card_strip']}; }}"
                 f"QSplitter#WorkbenchMainSplitter::handle:vertical {{ background: {pal['line']}; height: {_dp(1)}px; margin: {_dp(4)}px {_dp(16)}px; }}"
-                f"QPushButton#WorkbenchDividerHandle {{ background: {pal['bg_surface']}; color: {pal['text_muted']}; border: 1px solid {pal['line_hover']}; border-radius: {_dp(8)}px; font-size: {_fs('fs_10')}; padding: 0px; }}"
+                f"QPushButton#WorkbenchDividerHandle {{ background: {pal['bg_surface']}; color: {pal['text_muted']}; border: 1px solid {pal['line_hover']}; border-radius: {_rad(RAD_SM)}px; font-size: {_fs('fs_10')}; padding: 0px; }}"
                 f"QPushButton#WorkbenchDividerHandle:hover {{ background: {pal['hover_bg_strong']}; color: {pal['text']}; }}"
                 f"QLabel#WorkbenchRightClickHint {{ color: {pal['text_label']}; background: transparent; font-size: {_fs('fs_9')}; font-style: italic; }}"
             )
@@ -3617,7 +3620,7 @@ class MainWindow(QWidget):
             #ChangelogSurface {{
                 background: {pal['bg']};
                 border: 1px solid {pal['line_strong']};
-                border-radius: {_dp(8)}px;
+                border-radius: {_rad(RAD_MD)}px;
             }}
         """)
 
@@ -3639,7 +3642,7 @@ class MainWindow(QWidget):
                 background: {pal['bg_content']};
                 color: {pal['text_muted']};
                 border: 1px solid {pal['line']};
-                border-radius: {_dp(4)}px;
+                border-radius: {_rad(RAD_SM)}px;
                 padding: {_dp(8)}px;
                 font-size: {_fs('fs_11')};
             }}

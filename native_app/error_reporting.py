@@ -12,6 +12,7 @@ from PyQt6.QtGui import QDesktopServices
 from PyQt6.QtWidgets import QApplication, QMessageBox, QWidget
 
 from .models import ErrorReport
+from .ui_tokens import RAD_SM, _rad
 
 if TYPE_CHECKING:
     from .i18n import Translator
@@ -165,7 +166,7 @@ def show_error_report_dialog(report: ErrorReport, *, translator=None, parent: QW
         box.setStyleSheet(f"""
             QMessageBox {{ background: {p['bg']}; color: {p['text']}; }}
             QLabel {{ color: {p['text']}; background: transparent; }}
-            QPushButton {{ background: {p['bg_surface']}; color: {p['text']}; border: 1px solid {p['line']}; border-radius: 4px; padding: 4px 12px; }}
+            QPushButton {{ background: {p['bg_surface']}; color: {p['text']}; border: 1px solid {p['line']}; border-radius: {_rad(RAD_SM)}px; padding: 4px 12px; }}
             QPushButton:hover {{ border-color: {p['accent_text']}; }}
             QTextEdit {{ background: {p['bg_content']}; color: {p['text_muted']}; border: 1px solid {p['line']}; }}
         """)

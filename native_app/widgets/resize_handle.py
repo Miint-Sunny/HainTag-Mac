@@ -5,7 +5,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QFrame, QTextEdit, QVBoxLayout, QWidget
 
 from ..theme import current_palette
-from ..ui_tokens import _dp
+from ..ui_tokens import RAD_XS, _dp, _rad
 
 
 class ResizeHandle(QFrame):
@@ -24,7 +24,7 @@ class ResizeHandle(QFrame):
     def _apply_style(self) -> None:
         p = current_palette()
         self.setStyleSheet(
-            f"background: {p['line']}; border-radius: 2px; margin: 0 30%;"
+            f"background: {p['line']}; border-radius: {_rad(RAD_XS)}px; margin: 0 30%;"
         )
 
     def apply_theme(self) -> None:

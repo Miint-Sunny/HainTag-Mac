@@ -20,7 +20,7 @@ from PyQt6.QtWidgets import (
 from ..i18n import Translator
 from ..metadata import MetadataReader, ImageMetadata
 from ..theme import current_palette
-from ..ui_tokens import CLS_FIELD_LABEL, CLS_METADATA_FRAME, CLS_METADATA_TEXT, _dp
+from ..ui_tokens import CLS_FIELD_LABEL, CLS_METADATA_FRAME, CLS_METADATA_TEXT, RAD_SM, _dp, _rad
 from .collapsible_section import CollapsibleSection
 from .text_context_menu import install_localized_context_menus
 
@@ -50,7 +50,7 @@ class _DropZonePage(QWidget):
         pen = QPen(QColor(pal['text_dim']), 2, Qt.PenStyle.DashLine)
         p.setPen(pen)
         r = QRectF(self.rect()).adjusted(8, 8, -8, -8)
-        p.drawRoundedRect(r, 8, 8)
+        p.drawRoundedRect(r, _rad(RAD_SM), _rad(RAD_SM))
 
         p.setPen(QColor(pal['text_muted']))
         font = p.font()
@@ -131,7 +131,7 @@ class MetadataViewerWidget(QWidget):
         self._thumbnail.setFixedSize(_dp(80), _dp(80))
         self._thumbnail.setAlignment(Qt.AlignmentFlag.AlignCenter)
         p = current_palette()
-        self._thumbnail.setStyleSheet(f"border: 1px solid {p['line']}; border-radius: 4px;")
+        self._thumbnail.setStyleSheet(f"border: 1px solid {p['line']}; border-radius: {_rad(RAD_SM)}px;")
         top_row.addWidget(self._thumbnail)
 
         info_col = QVBoxLayout()

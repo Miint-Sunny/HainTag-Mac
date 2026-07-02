@@ -14,7 +14,7 @@ from PyQt6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidg
 
 from ..i18n import Translator
 from ..theme import _fs, current_palette
-from ..ui_tokens import _dp
+from ..ui_tokens import RAD_SM, _dp, _rad
 
 
 @dataclass
@@ -139,12 +139,12 @@ class OnboardingOverlay(QWidget):
         self._next_btn.setText(next_text)
         self._next_btn.setStyleSheet(
             f"color: {p['accent_text']}; background: {p['accent']}; border: none; "
-            f"border-radius: 4px; font-size: {_fs('fs_11')}; padding: 6px 16px;"
+            f"border-radius: {_rad(RAD_SM)}px; font-size: {_fs('fs_11')}; padding: 6px 16px;"
         )
 
         self._panel.setStyleSheet(
             f"#OnboardingPanel {{ background: {p['bg_surface']}; "
-            f"border: 1px solid {p['line_strong']}; border-radius: 8px; }}"
+            f"border: 1px solid {p['line_strong']}; border-radius: {_rad(RAD_SM)}px; }}"
         )
         self._panel.adjustSize()
         self._position_panel(step)
@@ -233,12 +233,12 @@ class OnboardingOverlay(QWidget):
             path.addRect(0, 0, self.width(), self.height())
             cutout = QPainterPath()
             cutout.addRoundedRect(float(highlight.x()), float(highlight.y()),
-                                  float(highlight.width()), float(highlight.height()), 8, 8)
+                                  float(highlight.width()), float(highlight.height()), _rad(RAD_SM), _rad(RAD_SM))
             path = path.subtracted(cutout)
             painter.fillPath(path, overlay_color)
             # Highlight border
             painter.setPen(QColor(current_palette()['accent_text']))
-            painter.drawRoundedRect(highlight, 8, 8)
+            painter.drawRoundedRect(highlight, _rad(RAD_SM), _rad(RAD_SM))
         else:
             painter.fillRect(self.rect(), overlay_color)
 

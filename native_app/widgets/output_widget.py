@@ -35,7 +35,7 @@ from PyQt6.QtWidgets import (
 from ..i18n import Translator
 from ..tag_dictionary import TagDictionary
 from ..theme import _fs, current_palette, is_theme_light
-from ..ui_tokens import _dp
+from ..ui_tokens import _dp, _rad, RAD_SM, RAD_XS
 from .text_context_menu import show_text_edit_context_menu
 
 # Regex to parse a single tag's weight: (tag:1.3) or plain tag
@@ -729,7 +729,7 @@ class _TagHoverTip(QFrame):
         body = self.rect().adjusted(0, 0, 0, -_dp(5))
         painter.setPen(self._border)
         painter.setBrush(self._bg)
-        painter.drawRoundedRect(body, _dp(4), _dp(4))
+        painter.drawRoundedRect(body, _rad(RAD_SM), _rad(RAD_SM))
         cx = self.width() // 2
         triangle = QPolygon([
             QPoint(cx - _dp(4), body.bottom()),
@@ -808,7 +808,7 @@ class _WorkbenchTagChip(QLabel):
             "QLabel#WorkbenchTagChip { "
             f"color: {color}; background: rgba({bg.red()}, {bg.green()}, {bg.blue()}, {bg.alpha() / 255:.3f}); "
             f"border: 1px solid rgba({border.red()}, {border.green()}, {border.blue()}, {border.alpha() / 255:.3f}); "
-            f"border-radius: {_dp(3)}px; padding: {_dp(2)}px {_dp(8)}px; "
+            f"border-radius: {_rad(RAD_XS)}px; padding: {_dp(2)}px {_dp(8)}px; "
             f"font-size: {_fs('fs_11')}; "
             "}"
             f"QLabel#WorkbenchTagChip:hover {{ background: {pal['hover_bg_strong']}; }}"
@@ -1407,9 +1407,9 @@ class OutputWidget(QWidget):
         self.setStyleSheet(
             f"QWidget#WorkbenchOutput {{ background: {pal['bg_card_strip']}; }}"
             f"QWidget#WorkbenchTabs {{ background: {pal['bg_card_strip']}; }}"
-            f"QFrame#WorkbenchOutputFrame {{ background: {pal['bg_surface']}; border: 1px solid {pal['line']}; border-radius: {_dp(4)}px; margin: 0px {_dp(16)}px 0px {_dp(16)}px; }}"
+            f"QFrame#WorkbenchOutputFrame {{ background: {pal['bg_surface']}; border: 1px solid {pal['line']}; border-radius: {_rad(RAD_SM)}px; margin: 0px {_dp(16)}px 0px {_dp(16)}px; }}"
             f"QWidget#WorkbenchCopyBar {{ background: {pal['bg_card_strip']}; }}"
-            f"QPushButton#WorkbenchCopyButton {{ background: {pal['bg_surface']}; color: {pal['text']}; border: 1px solid {pal['line_hover']}; border-radius: {_dp(4)}px; padding: {_dp(5)}px {_dp(12)}px; font-size: {_fs('fs_12')}; }}"
+            f"QPushButton#WorkbenchCopyButton {{ background: {pal['bg_surface']}; color: {pal['text']}; border: 1px solid {pal['line_hover']}; border-radius: {_rad(RAD_SM)}px; padding: {_dp(5)}px {_dp(12)}px; font-size: {_fs('fs_12')}; }}"
             f"QPushButton#WorkbenchCopyButton:hover {{ background: {pal['hover_bg_strong']}; }}"
             f"QLabel#WorkbenchStatusPill {{ background: {pal['bg_menu']}; color: {pal['text_muted']}; border: 1px solid {pal['line_hover']}; border-radius: {_dp(10)}px; padding: {_dp(3)}px {_dp(8)}px; font-size: {_fs('fs_11')}; }}"
             f"QTextEdit[class=\"OutputEditor\"] {{ background: transparent; color: {pal['text']}; border: none; "

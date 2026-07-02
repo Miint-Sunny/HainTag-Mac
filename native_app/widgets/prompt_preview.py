@@ -13,7 +13,7 @@ from PyQt6.QtWidgets import (
 
 from ..logic import estimate_text_tokens
 from ..theme import _fs, current_palette
-from ..ui_tokens import _dp
+from ..ui_tokens import _dp, _rad, RAD_SM
 from .text_context_menu import install_localized_context_menus
 
 
@@ -59,7 +59,7 @@ class PromptPreviewPopup(QWidget):
             #PreviewSurface {{
                 background: {p['bg']};
                 border: 1px solid {p['line_strong']};
-                border-radius: 8px;
+                border-radius: {_rad(RAD_SM)}px;
             }}
         """)
 
@@ -154,7 +154,7 @@ class PromptPreviewPopup(QWidget):
                     background: {p['bg_content']};
                     color: {p['text_muted']};
                     border: 1px solid {p['line']};
-                    border-radius: 4px;
+                    border-radius: {_rad(RAD_SM)}px;
                     padding: 4px 6px;
                     font-size: {_fs('fs_11')};
                 }}

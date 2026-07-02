@@ -17,7 +17,7 @@ from ..i18n import Translator
 from ..models import HistoryEntry
 from ..storage import AppStorage
 from ..theme import _fs, current_palette
-from ..ui_tokens import _dp
+from ..ui_tokens import RAD_XS, _dp, _rad
 from .text_context_menu import apply_app_menu_style
 
 
@@ -54,7 +54,7 @@ class _HistoryItem(QWidget):
             self._model_label = QLabel(entry.model, self)
             self._model_label.setStyleSheet(
                 f"color: {p['accent_text']}; font-size: {_fs('fs_9')}; border: none; "
-                f"background: {p['accent']}; border-radius: 2px; padding: 0 4px;"
+                f"background: {p['accent']}; border-radius: {_rad(RAD_XS)}px; padding: 0 4px;"
             )
             top.addWidget(self._model_label)
         top.addStretch()
@@ -87,7 +87,7 @@ class _HistoryItem(QWidget):
         if self._model_label:
             self._model_label.setStyleSheet(
                 f"color: {p['accent_text']}; font-size: {_fs('fs_9')}; border: none; "
-                f"background: {p['accent']}; border-radius: 2px; padding: 0 4px;"
+                f"background: {p['accent']}; border-radius: {_rad(RAD_XS)}px; padding: 0 4px;"
             )
         self._in_label.setStyleSheet(f"color: {p['text']}; font-size: {_fs('fs_10')}; border: none;")
         self._out_label.setStyleSheet(f"color: {p['text']}; font-size: {_fs('fs_10')}; border: none;")

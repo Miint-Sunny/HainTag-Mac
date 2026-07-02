@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QTextEdit, QVBoxLa
 from ..i18n import Translator
 from ..models import SEND_MODE_CTRL_ENTER, SEND_MODE_ENTER
 from ..theme import _fs, current_palette
-from ..ui_tokens import CLS_FIELD_LABEL, CLS_INPUT_EDITOR, _dp
+from ..ui_tokens import CLS_FIELD_LABEL, CLS_INPUT_EDITOR, RAD_SM, _dp, _rad
 
 
 class InputWidget(QWidget):
@@ -164,14 +164,14 @@ class InputWidget(QWidget):
         self.setStyleSheet(
             f"InputWidget {{ background: {p['bg_card_strip']}; }}"
             f"QTextEdit#WorkbenchInputEditor {{ background: {p['bg_input']}; color: {p['text']}; border: 1px solid {p['line']}; "
-            f"border-radius: {_dp(4)}px; padding: {_dp(10)}px {_dp(12)}px; selection-background-color: {p['selection_bg']}; "
+            f"border-radius: {_rad(RAD_SM)}px; padding: {_dp(10)}px {_dp(12)}px; selection-background-color: {p['selection_bg']}; "
             f"font-size: {_fs('fs_12')}; }}"
             f"QTextEdit#WorkbenchInputEditor:focus {{ border-color: {p['line_strong']}; }}"
             f"QWidget#WorkbenchFooter {{ background: {p['bg_card_strip']}; }}"
             f"QLabel#TokenLabel {{ color: {p['text_muted']}; font-size: {_fs('fs_12')}; }}"
-            f"QPushButton#WorkbenchFooterButton {{ background: {p['bg_surface']}; color: {p['text']}; border: 1px solid {p['line_hover']}; border-radius: {_dp(4)}px; }}"
+            f"QPushButton#WorkbenchFooterButton {{ background: {p['bg_surface']}; color: {p['text']}; border: 1px solid {p['line_hover']}; border-radius: {_rad(RAD_SM)}px; }}"
             f"QPushButton#WorkbenchFooterButton:hover {{ background: {p['hover_bg_strong']}; }}"
             f"QPushButton#WorkbenchFooterButton:disabled {{ color: {p['disabled_text']}; background: {p['disabled_bg']}; }}"
-            f"QPushButton#WorkbenchPrimaryButton {{ background: {p['accent']}; color: {p['accent_text']}; border: 1px solid {p['accent_hover']}; border-radius: {_dp(4)}px; }}"
+            f"QPushButton#WorkbenchPrimaryButton {{ background: {p['accent']}; color: {p['accent_text']}; border: 1px solid {p['accent_hover']}; border-radius: {_rad(RAD_SM)}px; }}"
             f"QPushButton#WorkbenchPrimaryButton:hover {{ background: {p['accent_hover']}; }}"
         )

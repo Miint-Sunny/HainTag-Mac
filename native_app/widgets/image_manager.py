@@ -49,7 +49,7 @@ from ..i18n import Translator
 from ..metadata import MetadataReader, MetadataWriter, ImageMetadata
 from ..metadata.thumb_cache import ThumbCache
 from ..theme import _fs, current_palette, is_theme_light
-from ..ui_tokens import CLS_METADATA_TEXT, _dp
+from ..ui_tokens import CLS_METADATA_TEXT, RAD_MD, RAD_SM, RAD_XS, _dp, _rad
 from .collapsible_section import CollapsibleSection
 from .text_context_menu import apply_app_menu_style, install_localized_context_menus
 
@@ -139,14 +139,14 @@ class _StyledDialog(QWidget):
             QWidget#DialogSurface {{
                 background: {p['bg']};
                 border: 1px solid {p['line_strong']};
-                border-radius: 8px;
+                border-radius: {_rad(RAD_SM)}px;
             }}
             QLabel {{ color: {p['text']}; background: transparent; }}
             QLineEdit {{
                 background: {p['bg_content']};
                 color: {p['text']};
                 border: 1px solid {p['line']};
-                border-radius: 4px;
+                border-radius: {_rad(RAD_SM)}px;
                 padding: 6px 8px;
                 font-size: {_fs('fs_12')};
                 selection-background-color: {p['accent']};
@@ -156,7 +156,7 @@ class _StyledDialog(QWidget):
                 background: transparent;
                 color: {p['text_muted']};
                 border: 1px solid {p['line']};
-                border-radius: 4px;
+                border-radius: {_rad(RAD_SM)}px;
                 padding: 6px 20px;
                 font-size: {_fs('fs_11')};
             }}
@@ -309,14 +309,14 @@ def _im_qss(p: dict[str, str]) -> str:
     #ImSurface {{
         background: {p['bg']};
         border: 1px solid {p['line_strong']};
-        border-radius: 10px;
+        border-radius: {_rad(RAD_MD)}px;
     }}
 
     /* ── Title bar ── */
     #ImTitleBar {{
         background: {p['bg_titlebar']};
-        border-top-left-radius: 10px;
-        border-top-right-radius: 10px;
+        border-top-left-radius: {_rad(RAD_MD)}px;
+        border-top-right-radius: {_rad(RAD_MD)}px;
     }}
     #ImTitleLabel {{
         color: {p['text_muted']};
@@ -348,7 +348,7 @@ def _im_qss(p: dict[str, str]) -> str:
         background: transparent;
         color: {p['text_muted']};
         border: 1px solid {p['line']};
-        border-radius: 3px;
+        border-radius: {_rad(RAD_XS)}px;
         padding: 2px 10px;
         font-size: {_fs('fs_10')};
     }}
@@ -377,7 +377,7 @@ def _im_qss(p: dict[str, str]) -> str:
         background: transparent;
         color: {p['text_muted']};
         border: 1px solid {p['line']};
-        border-radius: 3px;
+        border-radius: {_rad(RAD_XS)}px;
         padding: 3px 8px;
         font-size: {_fs('fs_10')};
     }}
@@ -397,7 +397,7 @@ def _im_qss(p: dict[str, str]) -> str:
         background: {p['bg_input']};
         color: {p['text_body']};
         border: 1px solid {p['line']};
-        border-radius: 3px;
+        border-radius: {_rad(RAD_XS)}px;
         padding: 1px 4px;
         font-size: {_fs('fs_11')};
     }}
@@ -424,7 +424,7 @@ def _im_qss(p: dict[str, str]) -> str:
     }}
     QScrollBar::handle:vertical {{
         background: {p['scrollbar']};
-        border-radius: 3px;
+        border-radius: {_rad(RAD_XS)}px;
         min-height: 30px;
     }}
     QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
@@ -435,7 +435,7 @@ def _im_qss(p: dict[str, str]) -> str:
     QTextEdit[class="MetadataText"] {{
         background: {p['bg_input']};
         border: 1px solid {p['line']};
-        border-radius: 4px;
+        border-radius: {_rad(RAD_SM)}px;
         color: {p['text_body']};
         font-size: {_fs('fs_11')};
         padding: 4px 6px;
@@ -610,11 +610,11 @@ class ThumbnailDelegate(QStyledItemDelegate):
         if option.state & QStyle.StateFlag.State_Selected:
             painter.setPen(QPen(QColor(p['accent_text']), 1))
             painter.setBrush(QColor(p['accent']))
-            painter.drawRoundedRect(r.adjusted(2, 2, -2, -2), 6, 6)
+            painter.drawRoundedRect(r.adjusted(2, 2, -2, -2), _rad(RAD_SM), _rad(RAD_SM))
         elif option.state & QStyle.StateFlag.State_MouseOver:
             painter.setPen(Qt.PenStyle.NoPen)
             painter.setBrush(QColor(p['hover_bg']))
-            painter.drawRoundedRect(r.adjusted(2, 2, -2, -2), 6, 6)
+            painter.drawRoundedRect(r.adjusted(2, 2, -2, -2), _rad(RAD_SM), _rad(RAD_SM))
 
         tr = r.adjusted(6, 6, -6, -22)
 
@@ -653,7 +653,7 @@ class ThumbnailDelegate(QStyledItemDelegate):
             elif path:
                 painter.setPen(QPen(QColor(p['line_strong']), 1, Qt.PenStyle.DotLine))
                 painter.setBrush(Qt.BrushStyle.NoBrush)
-                painter.drawRoundedRect(tr.adjusted(8, 8, -8, -8), 4, 4)
+                painter.drawRoundedRect(tr.adjusted(8, 8, -8, -8), _rad(RAD_SM), _rad(RAD_SM))
 
         # Like badge — minimal circle
         if path and path in self._likes:
@@ -923,7 +923,7 @@ class DetailPanel(QWidget):
         row.setSpacing(_dp(6))
         btn_style = (
             f"background: transparent; border: 1px solid {p['line']}; "
-            f"border-radius: 4px; color: {p['text_muted']}; font-size: {_fs('fs_10')}; "
+            f"border-radius: {_rad(RAD_SM)}px; color: {p['text_muted']}; font-size: {_fs('fs_10')}; "
             f"padding: 4px 8px; letter-spacing: 0.5px;"
         )
         for key, slot in [("copy", self._copy), ("im_copy_lora", self._copy_lora),
@@ -946,7 +946,7 @@ class DetailPanel(QWidget):
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
         pal = _p()
         path = QPainterPath()
-        path.addRoundedRect(self.rect().toRectF().adjusted(0.5, 0.5, -0.5, -0.5), 12, 12)
+        path.addRoundedRect(self.rect().toRectF().adjusted(0.5, 0.5, -0.5, -0.5), _rad(RAD_MD), _rad(RAD_MD))
         # Semi-transparent background
         bg = QColor(pal['bg_surface'])
         bg.setAlpha(240)
@@ -1030,7 +1030,7 @@ class DetailPanel(QWidget):
             QWidget.show(self)
         p = _p()
         self._float_pin_btn.setStyleSheet(
-            f"background: {p['accent']}; border: none; border-radius: 3px; color: {p['accent_text']}; font-size: {_fs('fs_11')};"
+            f"background: {p['accent']}; border: none; border-radius: {_rad(RAD_XS)}px; color: {p['accent_text']}; font-size: {_fs('fs_11')};"
             if not on_top else
             f"background: transparent; border: none; color: {p['text_dim']}; font-size: {_fs('fs_11')};"
         )

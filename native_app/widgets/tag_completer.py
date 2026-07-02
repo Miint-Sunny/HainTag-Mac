@@ -63,7 +63,7 @@ def _editor_cursor_global_pos(edit: TextEditor) -> QPoint:
 
 from ..tag_dictionary import TagDictionary, TagInfo
 from ..theme import _fs, current_palette
-from ..ui_tokens import _dp
+from ..ui_tokens import RAD_SM, RAD_XS, _dp, _rad
 
 
 _SEMANTIC_COLORS: dict[str, str] = {
@@ -236,13 +236,13 @@ class _SuggestionRow(QFrame):
             shortcut_border = "transparent"
         self.setStyleSheet(
             "QFrame#AcRow { "
-            f"{row_style} border-radius: {_dp(3)}px; }}"
+            f"{row_style} border-radius: {_rad(RAD_XS)}px; }}"
             f"QFrame#AcRow:hover {{ background: {p['hover_bg']}; }}"
             f"QLabel#AcName {{ color: {p['text']}; font-size: {_fs('fs_12')}; }}"
             f"QLabel#AcAlias {{ color: {p['text_label']}; font-size: {_fs('fs_9')}; font-style: italic; }}"
             f"QLabel#AcMeta {{ color: {p['text_label']}; font-size: {_fs('fs_9')}; }}"
             f"QLabel#AcShortcut {{ color: {shortcut_fg}; background: {shortcut_bg}; border: 1px solid {shortcut_border}; "
-            f"border-radius: {_dp(2)}px; padding: 1px {_dp(5)}px; font-size: {_fs('fs_8')}; }}"
+            f"border-radius: {_rad(RAD_XS)}px; padding: 1px {_dp(5)}px; font-size: {_fs('fs_8')}; }}"
         )
 
 
@@ -341,7 +341,7 @@ class TagCompleterPopup(QWidget):
     def apply_theme(self) -> None:
         p = current_palette()
         self.setStyleSheet(
-            f"QWidget#AcFrame {{ background: {p['bg_menu']}; border: 1px solid {p['line_strong']}; border-radius: {_dp(4)}px; }}"
+            f"QWidget#AcFrame {{ background: {p['bg_menu']}; border: 1px solid {p['line_strong']}; border-radius: {_rad(RAD_SM)}px; }}"
             f"QFrame#AcDrop {{ background: {p['bg_menu']}; border: none; }}"
             f"QFrame#AcFooter {{ background: {p['bg_menu']}; border-top: 1px solid {p['line']}; }}"
             f"QLabel#AcSectionLabel {{ color: {p['text_label']}; font-size: {_fs('fs_8')}; letter-spacing: 1px; }}"
@@ -420,7 +420,7 @@ class TagCompleterPopup(QWidget):
         def kbd(text: str) -> str:
             return (
                 f'<span style="font-size:{_fs("fs_9")};color:{p["text_label"]};background:{p["hover_bg"]};'
-                f'border:1px solid {p["line"]};border-radius:{_dp(2)}px;padding:1px {_dp(5)}px;">'
+                f'border:1px solid {p["line"]};border-radius:{_rad(RAD_XS)}px;padding:1px {_dp(5)}px;">'
                 f"{escape(text)}</span>"
             )
 

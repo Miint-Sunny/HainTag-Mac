@@ -13,7 +13,7 @@ from PyQt6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QWidget
 from ..i18n import Translator
 from ..storage import AppStorage
 from ..theme import _fs, current_palette
-from ..ui_tokens import _dp
+from ..ui_tokens import _dp, _rad, RAD_SM, RAD_XS
 
 
 class HintBubble(QWidget):
@@ -31,7 +31,7 @@ class HintBubble(QWidget):
         surface = QWidget(self)
         surface.setStyleSheet(
             f"background: {p['bg_surface']}; border: 1px solid {p['line_strong']}; "
-            f"border-radius: 4px;"
+            f"border-radius: {_rad(RAD_SM)}px;"
         )
 
         layout = QHBoxLayout(surface)
@@ -49,7 +49,7 @@ class HintBubble(QWidget):
         got_it_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         got_it_btn.setStyleSheet(
             f"color: {p['accent_text']}; background: {p['accent']}; border: none; "
-            f"border-radius: 3px; padding: 2px 10px; font-size: {_fs('fs_9')};"
+            f"border-radius: {_rad(RAD_XS)}px; padding: 2px 10px; font-size: {_fs('fs_9')};"
         )
         got_it_btn.clicked.connect(self.close)
         layout.addWidget(got_it_btn)

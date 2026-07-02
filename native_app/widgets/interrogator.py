@@ -32,7 +32,7 @@ from PyQt6.QtWidgets import (
 from ..i18n import Translator
 from ..file_filters import image_filter, python_filter
 from ..theme import _fs, current_palette, is_theme_light
-from ..ui_tokens import _dp
+from ..ui_tokens import _dp, _rad, RAD_SM, RAD_XS
 from .output_widget import CATEGORY_COLORS, CATEGORY_COLORS_LIGHT
 
 
@@ -195,7 +195,7 @@ def _local_button_style(*, primary: bool = False, compact: bool = False) -> str:
     pad = "0px 8px" if compact else "6px 12px"
     return (
         f"QPushButton {{ background: {bg}; color: {fg}; border: 1px solid {border}; "
-        f"border-radius: 3px; padding: {pad}; font-size: {_fs('fs_10')}; letter-spacing: 0.04em; }}"
+        f"border-radius: {_rad(RAD_XS)}px; padding: {pad}; font-size: {_fs('fs_10')}; letter-spacing: 0.04em; }}"
         f"QPushButton:hover {{ background: {c['accent_hover'] if primary else c['bg3']}; "
         f"color: {c['bg0'] if primary else c['fg0']}; border-color: {c['fg3'] if not primary else c['accent_hover']}; }}"
         f"QPushButton:disabled {{ color: {c['fg3']}; border-color: {c['line']}; background: transparent; }}"
@@ -257,7 +257,7 @@ class _LocalTagChip(QLabel):
             color = _semantic_category_color(self._category)
         fg = _readable_text_for_hex(color) if "_readable_text_for_hex" in globals() else "#ffffff"
         self.setStyleSheet(
-            f"background: {color}; color: {fg}; border: none; border-radius: 2px; "
+            f"background: {color}; color: {fg}; border: none; border-radius: {_rad(RAD_XS)}px; "
             f"padding: 0px {_dp(8)}px; font-size: {_fs('fs_10')};"
         )
 
@@ -757,15 +757,15 @@ class _LocalTaggerTab(QWidget):
             if isinstance(widget, QLabel):
                 widget.setStyleSheet(
                     f"background: {c['bg0']}; color: {c['fg2']}; border: 1px solid {c['line']}; "
-                    f"border-radius: 2px; padding: {_dp(5)}px {_dp(7)}px; font-size: {_fs('fs_9')};"
+                    f"border-radius: {_rad(RAD_XS)}px; padding: {_dp(5)}px {_dp(7)}px; font-size: {_fs('fs_9')};"
                 )
                 widget.setMinimumHeight(_dp(24))
                 widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
                 body_layout.addWidget(widget)
             elif isinstance(widget, QProgressBar):
                 widget.setStyleSheet(
-                    f"QProgressBar {{ background: {c['bg0']}; border: none; border-radius: 1px; }}"
-                    f"QProgressBar::chunk {{ background: {c['accent_text']}; border-radius: 1px; }}"
+                    f"QProgressBar {{ background: {c['bg0']}; border: none; border-radius: {_rad(RAD_XS)}px; }}"
+                    f"QProgressBar::chunk {{ background: {c['accent_text']}; border-radius: {_rad(RAD_XS)}px; }}"
                 )
                 body_layout.addWidget(widget)
             elif isinstance(widget, QPushButton):
@@ -824,14 +824,14 @@ class _LocalTaggerTab(QWidget):
             f"QWidget#LocalInferFooter {{ background: {c['bg2']}; border-top: 1px solid {c['line']}; }}"
             f"QScrollArea#LocalResultScroll {{ background: {c['bg1']}; border: none; }}"
             f"QWidget#LocalResultContainer {{ background: {c['bg1']}; }}"
-            f"QFrame#LocalSingleDrop {{ background: {c['bg0']}; border: 1.5px dashed {c['dash']}; border-radius: 2px; }}"
+            f"QFrame#LocalSingleDrop {{ background: {c['bg0']}; border: 1.5px dashed {c['dash']}; border-radius: {_rad(RAD_XS)}px; }}"
             f"QFrame#LocalSingleDrop:hover {{ border-color: {c['fg3']}; }}"
         )
         self._gen_slider.setStyleSheet(slider_style)
         self._char_slider.setStyleSheet(slider_style)
         self._drop_zone.apply_theme()
         self._drop_zone.setStyleSheet(
-            f"QFrame#LocalSingleDrop {{ background: {c['bg0']}; border: 1.5px dashed {c['dash']}; border-radius: 2px; }}"
+            f"QFrame#LocalSingleDrop {{ background: {c['bg0']}; border: 1.5px dashed {c['dash']}; border-radius: {_rad(RAD_XS)}px; }}"
             f"QFrame#LocalSingleDrop:hover {{ border-color: {c['fg3']}; }}"
         )
         self._drop_zone._label.setText(
@@ -895,7 +895,7 @@ class _LocalTaggerTab(QWidget):
         label.setVisible(show)
         label.setStyleSheet(
             f"background: {c['bg2']}; color: {c['hot']}; border: 1px solid {c['line2']}; "
-            f"border-radius: 2px; padding: {_dp(7)}px {_dp(8)}px; font-size: {_fs('fs_9')};"
+            f"border-radius: {_rad(RAD_XS)}px; padding: {_dp(7)}px {_dp(8)}px; font-size: {_fs('fs_9')};"
         )
 
     def _refresh_setup_view(self) -> None:
@@ -1023,7 +1023,7 @@ class _LocalTaggerTab(QWidget):
         c = _local_colors()
         frame = QFrame(parent)
         frame.setStyleSheet(
-            f"background: {c['bg2']}; border: 1px solid {c['line2']}; border-radius: 2px;"
+            f"background: {c['bg2']}; border: 1px solid {c['line2']}; border-radius: {_rad(RAD_XS)}px;"
         )
         layout = QHBoxLayout(frame)
         layout.setContentsMargins(_dp(10), _dp(8), _dp(10), _dp(8))
@@ -1051,7 +1051,7 @@ class _LocalTaggerTab(QWidget):
         head.setContentsMargins(0, 0, 0, 0)
         swatch = QLabel(group)
         swatch.setFixedSize(_dp(6), _dp(6))
-        swatch.setStyleSheet(f"background: {_semantic_category_color(category)}; border-radius: 1px;")
+        swatch.setStyleSheet(f"background: {_semantic_category_color(category)}; border-radius: {_rad(RAD_XS)}px;")
         head.addWidget(swatch)
         name = QLabel(_local_category_label(self._t, category), group)
         name.setStyleSheet(f"color: {c['fg1']}; font-size: {_fs('fs_9')}; font-weight: bold; letter-spacing: 0.08em;")
@@ -1137,7 +1137,7 @@ class _LocalTaggerTab(QWidget):
                 p = current_palette()
                 restart_btn.setStyleSheet(
                     f"background: {p['accent']}; color: {p['accent_text']}; "
-                    f"border: none; border-radius: 4px; padding: 8px 20px; "
+                    f"border: none; border-radius: {_rad(RAD_SM)}px; padding: 8px 20px; "
                     f"font-size: {_fs('fs_11')}; font-weight: bold;"
                 )
                 restart_btn.clicked.connect(self._restart_app)
@@ -1497,7 +1497,7 @@ class _LocalTaggerTab(QWidget):
             if cat in self._enabled_categories:
                 btn.setStyleSheet(
                     f"QPushButton {{ background: {p['bg3']}; color: {p['fg0']}; "
-                    f"border: 1px solid {p['line2']}; border-radius: 2px; padding: 0px 8px; "
+                    f"border: 1px solid {p['line2']}; border-radius: {_rad(RAD_XS)}px; padding: 0px 8px; "
                     f"font-size: {_fs('fs_9')}; font-weight: bold; letter-spacing: 0.04em; text-align: left; }}"
                     f"QPushButton:hover {{ color: {p['fg0']}; border-color: {p['fg2']}; }}"
                 )
@@ -1505,7 +1505,7 @@ class _LocalTaggerTab(QWidget):
             else:
                 btn.setStyleSheet(
                     f"QPushButton {{ background: transparent; color: {p['fg3']}; "
-                    f"border: 1px solid transparent; border-radius: 2px; padding: 0px 8px; "
+                    f"border: 1px solid transparent; border-radius: {_rad(RAD_XS)}px; padding: 0px 8px; "
                     f"font-size: {_fs('fs_9')}; font-weight: bold; letter-spacing: 0.04em; text-align: left; }}"
                     f"QPushButton:hover {{ color: {p['fg1']}; border-color: {p['line']}; }}"
                 )
@@ -1815,7 +1815,7 @@ class _InterrogatorModeSwitch(QFrame):
     def apply_theme(self) -> None:
         c = _llm_colors()
         self.setStyleSheet(
-            f"QFrame#InterrogatorModeSwitch {{ background: {c['bg0']}; border: 1px solid {c['line2']}; border-radius: 2px; }}"
+            f"QFrame#InterrogatorModeSwitch {{ background: {c['bg0']}; border: 1px solid {c['line2']}; border-radius: {_rad(RAD_XS)}px; }}"
         )
         for btn in (self._local_btn, self._llm_btn):
             active = btn.isChecked()
@@ -1860,14 +1860,14 @@ class _LLMTagChip(QPushButton):
             fg = _readable_text_for_hex(bg)
             self.setStyleSheet(
                 f"QPushButton {{ background: {bg}; color: {fg}; border: none; "
-                f"border-radius: 2px; padding: 0px {_dp(self._tag_padding)}px; "
+                f"border-radius: {_rad(RAD_XS)}px; padding: 0px {_dp(self._tag_padding)}px; "
                 f"font-size: {_fs('fs_10')}; letter-spacing: 0px; }}"
                 f"QPushButton:hover {{ border: 1px solid {c['line2']}; }}"
             )
         else:
             self.setStyleSheet(
                 f"QPushButton {{ background: transparent; color: {c['fg3']}; "
-                f"border: 1px dashed {c['line2']}; border-radius: 2px; "
+                f"border: 1px dashed {c['line2']}; border-radius: {_rad(RAD_XS)}px; "
                 f"padding: 0px {_dp(self._tag_padding)}px; font-size: {_fs('fs_10')}; font-style: italic; "
                 f"text-decoration: line-through; }}"
                 f"QPushButton:hover {{ color: {c['fg1']}; border-color: {c['fg2']}; }}"
@@ -1919,7 +1919,7 @@ class _LLMThumbButton(QFrame):
         width = 2 if selected else 1
         self.setStyleSheet(
             f"QFrame {{ background: {c['bg3']}; border: {width}px solid {border}; "
-            f"border-radius: 2px; }}"
+            f"border-radius: {_rad(RAD_XS)}px; }}"
         )
         self._active_dot.setVisible(selected)
 
@@ -2791,7 +2791,7 @@ class _LLMTaggerTab(QWidget):
         c = _llm_colors()
         add_btn.setStyleSheet(
             f"QPushButton {{ background: transparent; color: {c['fg3']}; border: 1px dashed {c['dash']}; "
-            f"border-radius: 2px; font-size: {_fs('fs_12')}; padding: 0px; }}"
+            f"border-radius: {_rad(RAD_XS)}px; font-size: {_fs('fs_12')}; padding: 0px; }}"
             f"QPushButton:hover {{ color: {c['fg1']}; border-color: {c['fg2']}; }}"
         )
         self._thumb_layout.addWidget(add_btn)
@@ -2895,7 +2895,7 @@ class _LLMTaggerTab(QWidget):
         c = _llm_colors()
         control = (
             f"font-size: {_fs('fs_10')}; background: {c['bg0']}; color: {c['fg0']}; "
-            f"border: 1px solid {c['line']}; border-radius: {_dp(3)}px; padding: {_dp(5)}px {_dp(8)}px;"
+            f"border: 1px solid {c['line']}; border-radius: {_rad(RAD_XS)}px; padding: {_dp(5)}px {_dp(8)}px;"
         )
         self.setStyleSheet(
             f"QWidget#LLMTopBar, QWidget#LLMFooter {{ background: {c['bg2']}; border-top: 1px solid {c['line']}; border-bottom: 1px solid {c['line']}; }}"
@@ -2919,8 +2919,8 @@ class _LLMTaggerTab(QWidget):
             f"QPushButton#SecondaryButton {{ color: {c['fg1']}; background: transparent; border-color: {c['line2']}; }}"
             f"QScrollArea {{ background: {c['bg1']}; border: none; }}"
             f"QScrollArea#LLMThumbStrip {{ background: {c['bg1']}; border-top: 1px solid {c['line']}; }}"
-            f"QProgressBar {{ background: {c['bg3']}; border: none; border-radius: 1px; }}"
-            f"QProgressBar::chunk {{ background: {c['accent_text']}; border-radius: 1px; }}"
+            f"QProgressBar {{ background: {c['bg3']}; border: none; border-radius: {_rad(RAD_XS)}px; }}"
+            f"QProgressBar::chunk {{ background: {c['accent_text']}; border-radius: {_rad(RAD_XS)}px; }}"
         )
         self._mode_switch.apply_theme()
         self._stats_label.setStyleSheet(f"color: {c['fg2']}; font-size: {_fs('fs_10')};")
@@ -2930,7 +2930,7 @@ class _LLMTaggerTab(QWidget):
         self._thumb_container.setStyleSheet(f"background: {c['bg1']};")
         self._drop_zone.apply_theme()
         self._drop_zone.setStyleSheet(
-            f"background: {c['bg0']}; border: 1.5px dashed {c['dash']}; border-radius: 4px;"
+            f"background: {c['bg0']}; border: 1.5px dashed {c['dash']}; border-radius: {_rad(RAD_SM)}px;"
         )
         self._drop_zone._label.setStyleSheet(
             f"color: {c['fg2']}; font-size: {_fs('fs_11')}; border: none;"
@@ -2993,7 +2993,7 @@ class _DropZone(QFrame):
     def apply_theme(self):
         p = current_palette()
         self.setStyleSheet(
-            f"background: {p['bg_input']}; border: 1px solid {p['line']}; border-radius: 6px;"
+            f"background: {p['bg_input']}; border: 1px solid {p['line']}; border-radius: {_rad(RAD_SM)}px;"
         )
         self._label.setStyleSheet(f"color: {p['text_dim']}; font-size: {_fs('fs_10')}; border: none;")
 

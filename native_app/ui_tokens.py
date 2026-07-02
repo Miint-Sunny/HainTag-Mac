@@ -47,6 +47,21 @@ def app_ui_scale() -> float:
 def _dp(px: int | float) -> int:
     return max(1, int(round(float(px) * _dpi_scale() * _app_ui_scale)))
 
+
+# Corner-radius scale — the "subtle round" design language. Mirrors the QSS
+# rad_* tokens; use ONE of these four everywhere. _rad() DPI-scales (like every
+# other inline metric) so a widget's radius tracks its own _dp() sizes.
+RAD_NONE = 0   # deliberate square joins: segmented tabs, full-width dock rows
+RAD_XS = 2     # thin chrome: scrollbars, sliders, progress bars, tiny handles
+RAD_SM = 6     # core token: buttons, inputs, menus, small cards, chips
+RAD_MD = 10    # large containers: cards, panels, dialogs, popups, window shell
+
+
+def _rad(px: int) -> int:
+    """Corner radius for inline stylesheets: f'border-radius: {_rad(RAD_SM)}px;'"""
+    return _dp(px)
+
+
 WINDOW_RADIUS = 12
 WINDOW_SURFACE_MARGIN = 8
 WINDOW_EDGE_GAP = 10

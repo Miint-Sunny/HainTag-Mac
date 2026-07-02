@@ -8,7 +8,7 @@ from PyQt6.QtWidgets import QHBoxLayout, QLabel, QMenu, QPushButton, QVBoxLayout
 from ..i18n import Translator
 from ..models import FloatingTrayMemberState, FloatingTrayState
 from ..theme import _fs, current_palette
-from ..ui_tokens import _dp
+from ..ui_tokens import RAD_SM, RAD_XS, _dp, _rad
 from .text_context_menu import apply_app_menu_style
 
 
@@ -220,11 +220,11 @@ class FloatingTrayWidget(QWidget):
         self.setMinimumWidth(_dp(112))
         self.setMaximumWidth(_dp(160))
         self.setStyleSheet(
-            f"#FloatingTray {{ background: {p['bg_surface']}; border: 1px solid {p['line_strong']}; border-radius: {_dp(7)}px; }}"
+            f"#FloatingTray {{ background: {p['bg_surface']}; border: 1px solid {p['line_strong']}; border-radius: {_rad(RAD_SM)}px; }}"
             f" QLabel {{ color: {p['text']}; font-size: {_fs('fs_10')}; }}"
-            f" QPushButton#FloatingTrayClose {{ color: {p['text_dim']}; background: transparent; border: none; border-radius: {_dp(2)}px; font-size: {_fs('fs_11')}; }}"
+            f" QPushButton#FloatingTrayClose {{ color: {p['text_dim']}; background: transparent; border: none; border-radius: {_rad(RAD_XS)}px; font-size: {_fs('fs_11')}; }}"
             f" QPushButton#FloatingTrayClose:hover {{ color: {p['text']}; background: {p['hover_bg_strong']}; }}"
-            f" QPushButton#FloatingTrayMember {{ color: {p['text']}; background: {p['bg_content']}; border: 1px solid {p['line']}; border-radius: {_dp(3)}px; padding: {_dp(4)}px {_dp(6)}px; font-size: {_fs('fs_9')}; text-align: left; }}"
+            f" QPushButton#FloatingTrayMember {{ color: {p['text']}; background: {p['bg_content']}; border: 1px solid {p['line']}; border-radius: {_rad(RAD_XS)}px; padding: {_dp(4)}px {_dp(6)}px; font-size: {_fs('fs_9')}; text-align: left; }}"
             f" QPushButton#FloatingTrayMember:hover {{ background: {p['hover_bg']}; border-color: {p['line_strong']}; color: {p['text']}; }}"
             f" QPushButton#FloatingTrayMember:pressed {{ background: {p['accent']}; color: {p['accent_text']}; border-color: {p['accent']}; }}"
             f" QPushButton#FloatingTrayMember[active=\"true\"] {{ background: {p['accent_sub']}; border-color: {p['accent_hover']}; color: {p['accent_text']}; }}"

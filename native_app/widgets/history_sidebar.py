@@ -20,7 +20,7 @@ from ..i18n import Translator
 from ..models import HistoryEntry
 from ..storage import AppStorage
 from ..theme import _fs, current_palette
-from ..ui_tokens import _dp
+from ..ui_tokens import RAD_SM, RAD_XS, _dp, _rad
 from .text_context_menu import apply_app_menu_style
 
 
@@ -85,11 +85,11 @@ class _HistoryTextBlock(QWidget):
         )
         self._copy_btn.setStyleSheet(
             f"color: {p['text']}; background: {p['accent']}; border: none; "
-            f"border-radius: {_dp(3)}px; padding: {_dp(3)}px {_dp(10)}px; font-size: {_fs('fs_9')};"
+            f"border-radius: {_rad(RAD_XS)}px; padding: {_dp(3)}px {_dp(10)}px; font-size: {_fs('fs_9')};"
         )
         self._editor.setStyleSheet(
             f"color: {p['text']}; font-size: {_fs('fs_10')}; background: {p['bg_card']}; "
-            f"border: 1px solid {p['line']}; border-radius: {_dp(4)}px; padding: {_dp(4)}px;"
+            f"border: 1px solid {p['line']}; border-radius: {_rad(RAD_SM)}px; padding: {_dp(4)}px;"
         )
 
 
@@ -266,7 +266,7 @@ class _HistorySidebarItem(QWidget):
         self._ts_label.setStyleSheet(f"color: {p['text_dim']}; font-size: {_fs('fs_9')};")
         self._model_label.setStyleSheet(
             f"color: {p['accent_text']}; font-size: {_fs('fs_9')}; background: {p['accent']}; "
-            f"border-radius: {_dp(2)}px; padding: 0 {_dp(4)}px;"
+            f"border-radius: {_rad(RAD_XS)}px; padding: 0 {_dp(4)}px;"
         )
         self._preview_label.setStyleSheet(f"color: {p['text']}; font-size: {_fs('fs_9')};")
         if self._input_block is not None:
@@ -278,12 +278,12 @@ class _HistorySidebarItem(QWidget):
         if hasattr(self, "_fill_btn"):
             self._fill_btn.setStyleSheet(
                 f"color: {p['text']}; background: {p['accent']}; border: none; "
-                f"border-radius: {_dp(3)}px; padding: {_dp(3)}px {_dp(10)}px; font-size: {_fs('fs_9')};"
+                f"border-radius: {_rad(RAD_XS)}px; padding: {_dp(3)}px {_dp(10)}px; font-size: {_fs('fs_9')};"
             )
         if hasattr(self, "_restore_btn"):
             self._restore_btn.setStyleSheet(
                 f"color: {p['text_dim']}; background: {p['bg_surface']}; border: 1px solid {p['line']}; "
-                f"border-radius: {_dp(3)}px; padding: {_dp(3)}px {_dp(10)}px; font-size: {_fs('fs_9')};"
+                f"border-radius: {_rad(RAD_XS)}px; padding: {_dp(3)}px {_dp(10)}px; font-size: {_fs('fs_9')};"
             )
 
 

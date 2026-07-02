@@ -15,7 +15,7 @@ from PyQt6.QtWidgets import (
 from ..i18n import Translator
 from ..models import SEND_MODE_ENTER
 from ..theme import _fs, current_palette
-from ..ui_tokens import _dp
+from ..ui_tokens import RAD_SM, RAD_XS, _dp, _rad
 
 def _shortcut_data(send_mode: str) -> list[tuple[str, list[tuple[str, str]]]]:
     send_label = "Enter" if send_mode == SEND_MODE_ENTER else "Ctrl+Enter"
@@ -71,7 +71,7 @@ class ShortcutsPanel(QWidget):
         surface = QWidget(self)
         surface.setStyleSheet(
             f"#ShortcutSurface {{ background: {p['bg']}; "
-            f"border: 1px solid {p['line_strong']}; border-radius: 8px; }}"
+            f"border: 1px solid {p['line_strong']}; border-radius: {_rad(RAD_SM)}px; }}"
         )
         surface.setObjectName("ShortcutSurface")
 
@@ -121,7 +121,7 @@ class ShortcutsPanel(QWidget):
                 key_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
                 key_label.setStyleSheet(
                     f"background: {p['bg_content']}; color: {p['text']}; "
-                    f"border: 1px solid {p['line']}; border-radius: 3px; "
+                    f"border: 1px solid {p['line']}; border-radius: {_rad(RAD_XS)}px; "
                     f"padding: 2px 8px; font-size: {_fs('fs_10')};"
                 )
                 row.addWidget(key_label)
@@ -144,7 +144,7 @@ class ShortcutsPanel(QWidget):
             self.tutorial_button.setCursor(Qt.CursorShape.PointingHandCursor)
             self.tutorial_button.setStyleSheet(
                 f"color: {p['accent_text']}; background: {p['accent']}; border: none; "
-                f"border-radius: 4px; padding: {_dp(5)}px {_dp(14)}px; font-size: {_fs('fs_10')};"
+                f"border-radius: {_rad(RAD_SM)}px; padding: {_dp(5)}px {_dp(14)}px; font-size: {_fs('fs_10')};"
             )
             self.tutorial_button.clicked.connect(lambda: (self.close(), on_tutorial()))
             main_layout.addWidget(self.tutorial_button, 0, Qt.AlignmentFlag.AlignRight)
