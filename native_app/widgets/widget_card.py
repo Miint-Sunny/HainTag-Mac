@@ -4,6 +4,7 @@ from PyQt6.QtCore import QEvent, QPoint, QRect, QSize, Qt, pyqtSignal
 from PyQt6.QtWidgets import QFrame, QPushButton, QVBoxLayout, QWidget
 
 from ..theme import _fs, current_palette
+from ..icons import pin_icon
 from ..ui_tokens import WIDGET_RESIZE_CORNER, WIDGET_RESIZE_EDGE, WIDGET_RESIZE_HINT, RAD_SM, _dp, _rad
 
 from PyQt6.QtWidgets import QLabel
@@ -74,7 +75,7 @@ class WidgetCard(QFrame):
         self._close_btn.setToolTip("")  # set by retranslate_ui
         self._close_btn.clicked.connect(self._close_action)
 
-        self._pin_btn = QPushButton("📌", self._drag_strip)
+        self._pin_btn = QPushButton(self._drag_strip)
         self._pin_btn.setObjectName("WidgetPinBtn")
         self._pin_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._pin_btn.setFixedSize(_dp(24), _dp(24))
@@ -339,10 +340,9 @@ class WidgetCard(QFrame):
         self._close_btn.setStyleSheet(
             f"color: {p['text_dim']}; background: transparent; border: none; font-size: {_fs('fs_12')};"
         )
-        if self._plain_pin_icons:
-            self._pin_btn.setText('●' if self._pinned else '○')
-        else:
-            self._pin_btn.setText('📌' if self._pinned else '📍')
+        self._pin_btn.setText('')
+        self._pin_btn.setIcon(pin_icon(_dp(14), color, pinned=self._pinned))
+        self._pin_btn.setIconSize(QSize(_dp(14), _dp(14)))
         self._pin_btn.setToolTip(self._pin_off_title if self._pinned else self._pin_on_title)
 
     def _toggle_pin(self) -> None:
