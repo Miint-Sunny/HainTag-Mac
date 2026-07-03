@@ -49,6 +49,7 @@ from ..i18n import Translator
 from ..metadata import MetadataReader, MetadataWriter, ImageMetadata
 from ..metadata.thumb_cache import ThumbCache
 from ..theme import _fs, current_palette, is_theme_light
+from ..icons import pin_icon
 from ..ui_tokens import CLS_METADATA_TEXT, RAD_MD, RAD_SM, RAD_XS, _dp, _rad
 from .collapsible_section import CollapsibleSection
 from .text_context_menu import apply_app_menu_style, install_localized_context_menus
@@ -115,6 +116,15 @@ def _send_to_recycle_bin(paths: list[str]) -> bool:
 
 def _p() -> dict[str, str]:
     return current_palette()
+
+
+def _set_pin_icon(btn, size_px: int, *, pinned: bool) -> None:
+    """Give a pin button the flat push-pin glyph in the current palette colour."""
+    p = _p()
+    color = p['accent_text'] if pinned else p['text_dim']
+    btn.setText('')
+    btn.setIcon(pin_icon(size_px, color, pinned=pinned))
+    btn.setIconSize(QSize(size_px, size_px))
 
 
 class _StyledDialog(QWidget):
@@ -848,10 +858,11 @@ class DetailPanel(QWidget):
         drag_hint.setCursor(Qt.CursorShape.OpenHandCursor)
         top_row.addWidget(drag_hint)
         top_row.addStretch()
-        self._float_pin_btn = QPushButton("📌", self)
+        self._float_pin_btn = QPushButton(self)
         self._float_pin_btn.setFixedSize(_dp(20), _dp(20))
         self._float_pin_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._float_pin_btn.setStyleSheet(f"background: transparent; border: none; color: {_p()['text_dim']}; font-size: {_fs('fs_11')};")
+        _set_pin_icon(self._float_pin_btn, _dp(12), pinned=bool(self.windowFlags() & Qt.WindowType.WindowStaysOnTopHint))
         self._float_pin_btn.clicked.connect(self._toggle_float_pin)
         top_row.addWidget(self._float_pin_btn)
         root.addLayout(top_row)
@@ -1034,6 +1045,7 @@ class DetailPanel(QWidget):
             if not on_top else
             f"background: transparent; border: none; color: {p['text_dim']}; font-size: {_fs('fs_11')};"
         )
+        _set_pin_icon(self._float_pin_btn, _dp(12), pinned=not on_top)
 
     def show_image(self, path: str):
         self._path = path
@@ -1221,11 +1233,12 @@ class ImageManagerWindow(QWidget):
         self._status.setObjectName("ImDetailInfo")
         tbl.addWidget(self._status)
 
-        self._pin_btn = QPushButton("📌", tb)
+        self._pin_btn = QPushButton(tb)
         self._pin_btn.setObjectName("ImTitleBtn")
         self._pin_btn.setFixedSize(_dp(30), _dp(26))
         self._pin_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._pin_btn.clicked.connect(lambda: self._toggle_pin())
+        _set_pin_icon(self._pin_btn, _dp(15), pinned=bool(self.windowFlags() & Qt.WindowType.WindowStaysOnTopHint))
         tbl.addWidget(self._pin_btn)
 
         for text, slot in [("—", self._minimize), ("✕", self.close)]:
@@ -1405,6 +1418,8 @@ class ImageManagerWindow(QWidget):
     def apply_theme(self):
         """Re-apply theme colors. Call after main window theme switch."""
         self.setStyleSheet(_im_qss(_p()))
+        if hasattr(self, '_pin_btn'):
+            _set_pin_icon(self._pin_btn, _dp(15), pinned=bool(self.windowFlags() & Qt.WindowType.WindowStaysOnTopHint))
 
     def show(self):
         self.apply_theme()
@@ -1517,6 +1532,7 @@ class ImageManagerWindow(QWidget):
             if not pinned else
             f"background: transparent; color: {p['text_dim']}; border: none; font-size: {_fs('fs_13')};"
         )
+        _set_pin_icon(self._pin_btn, _dp(15), pinned=not pinned)
 
     def eventFilter(self, obj, event):
         if event.type() == QEvent.Type.MouseButtonPress:

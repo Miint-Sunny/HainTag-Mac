@@ -45,6 +45,7 @@ from .app_paths import app_data_dir
 from .error_reporting import report_error, safe_context_from_settings
 from .file_filters import config_filter, image_filter, json_filter, ttf_filter
 from .font_loader import build_body_font
+from .icons import pin_icon
 from .theme import _fs, current_palette
 from .i18n import Translator
 from .logic import build_messages, estimate_messages_tokens, normalize_api_base_url, validate_examples
@@ -337,7 +338,7 @@ class MainWindow(QWidget):
         self.btn_settings = self._create_title_button('⚙', self._toggle_settings)
         self.btn_gallery = self._create_title_button('🖼', self._open_image_manager)
         self.btn_help = self._create_title_button('?', self._show_shortcuts_panel)
-        self.btn_pin = self._create_title_button('📌', lambda: self._toggle_pin())
+        self.btn_pin = self._create_title_button('', lambda: self._toggle_pin())
         self.btn_min = self._create_title_button('─', self.showMinimized)
         self.btn_max = self._create_title_button('□', self._toggle_maximize)
         self.btn_close = self._create_title_button('×', self.close, object_name='CloseButton')
@@ -349,6 +350,7 @@ class MainWindow(QWidget):
                 button.hide()
         self._set_button_active(self.btn_settings, False)
         self._set_button_active(self.btn_pin, False)
+        self._refresh_titlebar_pin_icon(False)
 
         self.content_host = QWidget(self.surface)
         self.content_host.setObjectName('ContentHost')
@@ -675,6 +677,16 @@ class MainWindow(QWidget):
         button.setProperty('active', active)
         self.style().unpolish(button)
         self.style().polish(button)
+
+    def _refresh_titlebar_pin_icon(self, pinned: bool | None = None) -> None:
+        """Repaint the flat push-pin glyph for the current pin + palette state."""
+        if pinned is None:
+            pinned = bool(self.windowFlags() & Qt.WindowType.WindowStaysOnTopHint)
+        p = current_palette()
+        color = p['accent_text'] if pinned else p['text_dim']
+        self.btn_pin.setText('')
+        self.btn_pin.setIcon(pin_icon(_dp(15), color, pinned=pinned))
+        self.btn_pin.setIconSize(QSize(_dp(15), _dp(15)))
 
     def _load_state_into_ui(self) -> None:
         self.settings_panel.apply_settings(self._state.settings)
@@ -1521,7 +1533,7 @@ class MainWindow(QWidget):
             self.show()
         self._apply_native_window_style()
         self._set_button_active(self.btn_pin, pinned)
-        self.btn_pin.setText('📌' if pinned else '📍')
+        self._refresh_titlebar_pin_icon(pinned)
         self.btn_pin.setToolTip(self._translator.t('pin_off') if pinned else self._translator.t('pin_on'))
 
     def _apply_full_profile_state(self, state: AppState) -> None:
@@ -2358,6 +2370,7 @@ class MainWindow(QWidget):
         # Refresh tag category highlighter colors
         self.output_widget.refresh_highlighter()
         self.output_widget.apply_workbench_style()
+        self._refresh_titlebar_pin_icon()
         self._apply_main_workbench_style()
         self.input_widget.apply_workbench_style()
         if hasattr(self, 'workbench_timeline') and self.workbench_timeline is not None:
@@ -3119,7 +3132,7 @@ class MainWindow(QWidget):
         self.btn_gallery.setToolTip(self._translator.t('image_manager'))
         self.btn_help.setToolTip(self._translator.t('shortcuts'))
         self._version_label.setToolTip(self._translator.t("changelog"))
-        self.btn_pin.setText('📌' if bool(self.windowFlags() & Qt.WindowType.WindowStaysOnTopHint) else '📍')
+        self._refresh_titlebar_pin_icon()
         self.btn_pin.setToolTip(
             self._translator.t('pin_off') if bool(self.windowFlags() & Qt.WindowType.WindowStaysOnTopHint) else self._translator.t('pin_on')
         )
