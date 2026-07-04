@@ -34,7 +34,7 @@ from ..file_filters import image_filter, python_filter
 from ..theme import _fs, current_palette, is_theme_light
 from ..ui_tokens import _dp, _rad, RAD_SM, RAD_XS
 from ..icons import paint_rounded_surface
-from .common import DashedRectButton
+from .common import DashedRectButton, RoundHandleSlider
 from .output_widget import CATEGORY_COLORS, CATEGORY_COLORS_LIGHT
 
 
@@ -585,7 +585,7 @@ class _LocalTaggerTab(QWidget):
         gl.setStyleSheet(f"color: {p['text_body']}; font-size: {_fs('fs_9')};")
         gl.setToolTip(self._t.t("interr_general_tip"))
         row2.addWidget(gl)
-        self._gen_slider = QSlider(Qt.Orientation.Horizontal, toolbar)
+        self._gen_slider = RoundHandleSlider(Qt.Orientation.Horizontal, toolbar)
         self._gen_slider.setMinimumWidth(_dp(90))
         self._gen_slider.setRange(5, 95)
         self._gen_slider.setValue(self._local_general_threshold)
@@ -602,7 +602,7 @@ class _LocalTaggerTab(QWidget):
         cl.setStyleSheet(f"color: {p['text_body']}; font-size: {_fs('fs_9')};")
         cl.setToolTip(self._t.t("interr_character_tip"))
         row2.addWidget(cl)
-        self._char_slider = QSlider(Qt.Orientation.Horizontal, toolbar)
+        self._char_slider = RoundHandleSlider(Qt.Orientation.Horizontal, toolbar)
         self._char_slider.setMinimumWidth(_dp(90))
         self._char_slider.setRange(5, 95)
         self._char_slider.setValue(self._local_character_threshold)
@@ -812,8 +812,7 @@ class _LocalTaggerTab(QWidget):
             f"QSlider::sub-page:horizontal {{ height: 1px; background: {c['fg2']}; margin: 7px 0px; }}"
             f"QSlider::add-page:horizontal {{ height: 1px; background: {c['line2']}; margin: 7px 0px; }}"
             f"QSlider::handle:horizontal {{ width: 10px; height: 10px; margin: -5px 0px; "
-            f"border-radius: 5px; background: {c['fg1']}; border: none; }}"
-            f"QSlider::handle:horizontal:hover {{ background: {c['fg0']}; }}"
+            f"background: transparent; border: none; }}"
         )
         page.setStyleSheet(
             f"QWidget#LocalReadyPage {{ background: {c['bg1']}; }}"

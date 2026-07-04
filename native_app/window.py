@@ -93,6 +93,7 @@ from .ui_tokens import (
     _dp,
     _rad,
 )
+from .widgets.common import RoundHandleSlider
 from .widgets.dock import DockPanel
 from .widgets.example_widget import ExampleWidget
 from .widgets.floating_tray import FloatingTrayWidget
@@ -2235,7 +2236,7 @@ class MainWindow(QWidget):
             val_lbl = QLabel(f'{default}%', inner)
             row.addWidget(val_lbl)
             layout.addLayout(row)
-            slider = QSlider(Qt.Orientation.Horizontal, inner)
+            slider = RoundHandleSlider(Qt.Orientation.Horizontal, inner)
             slider.setRange(0, 100)
             slider.setValue(default)
             slider.valueChanged.connect(lambda v, a=attr, vl=val_lbl: self._on_bg_slider(a, v, vl))

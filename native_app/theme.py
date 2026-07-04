@@ -689,10 +689,11 @@ QSlider::sub-page:horizontal {{
 }}
 
 QSlider::handle:horizontal {{
+    /* Knob is a self-painted antialiased circle in RoundHandleSlider; keep the
+       geometry so subControlRect lays it out, but paint nothing here. */
     width: 14px;
     margin: -5px 0;
-    border-radius: 7px;  /* == half of the 14px handle: keep the knob circular */
-    background: {accent_handle};
+    background: transparent;
 }}
 
 /* ── Menus & Tooltips ── */
@@ -831,10 +832,11 @@ QSplitter::handle:vertical:hover {{
 }}
 
 #PopupPanel QSlider::handle:horizontal {{
+    /* Knob is a self-painted antialiased circle in RoundHandleSlider; keep the
+       geometry so subControlRect lays it out, but paint nothing here. */
     width: 14px;
     margin: -5px 0;
-    border-radius: 7px;  /* == half of the 14px handle: keep the knob circular */
-    background: {accent_handle};
+    background: transparent;
 }}
 
 #PopupPanel QListWidget {{

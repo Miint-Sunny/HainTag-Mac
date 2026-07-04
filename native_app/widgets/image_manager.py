@@ -51,6 +51,7 @@ from ..metadata.thumb_cache import ThumbCache
 from ..theme import _fs, current_palette, is_theme_light
 from ..icons import pin_icon, paint_rounded_surface, to_qcolor
 from ..ui_tokens import CLS_METADATA_TEXT, RAD_MD, RAD_SM, RAD_XS, _dp, _rad
+from .common import RoundHandleSlider
 from .collapsible_section import CollapsibleSection
 from .text_context_menu import apply_app_menu_style, install_localized_context_menus
 
@@ -427,14 +428,11 @@ def _im_qss(p: dict[str, str]) -> str:
         border-radius: 1px;
     }}
     QSlider::handle:horizontal {{
+        /* Knob self-painted (antialiased circle) in RoundHandleSlider. */
         width: 10px;
         height: 10px;
         margin: -4px 0;
-        background: {p['text_muted']};
-        border-radius: 5px;
-    }}
-    QSlider::handle:horizontal:hover {{
-        background: {p['accent_text']};
+        background: transparent;
     }}
 
     /* ── Scrollbar ── */
@@ -1387,7 +1385,7 @@ class ImageManagerWindow(QWidget):
         self._buf_spin = spin
         items.append(("im_buffer_size", spin))
 
-        slider = QSlider(Qt.Orientation.Horizontal, parent)
+        slider = RoundHandleSlider(Qt.Orientation.Horizontal, parent)
         slider.setRange(96, 256)
         slider.setValue(self._ts)
         slider.setFixedWidth(_dp(100))
