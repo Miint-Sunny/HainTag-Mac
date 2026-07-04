@@ -431,16 +431,17 @@ class MainWindow(QWidget):
 
         self.main_card = WidgetCard('widget-main', min_size=QSize(520, 400), parent=self.workspace)
         self.main_card.set_workbench_chrome(True)
+        self.main_card.set_border_key('line_hover')
         pal = current_palette()
         self.main_card.setStyleSheet(
-            f"#WidgetCard {{ background: {pal['bg_card']}; border: 1px solid {pal['line_hover']}; border-radius: {_rad(RAD_MD)}px; }}"
+            f"#WidgetCard {{ background: transparent; border: none; }}"
             f"#WidgetCard:hover {{ border-color: {pal['line_strong']}; }}"
-            f"#WidgetDragStrip {{ background: {pal['bg_card_strip']}; border-bottom: 1px solid {pal['line']}; }}"
-            f"#WidgetDragStrip:hover {{ background: {pal['bg_card_strip_hover']}; }}"
-            f"QPushButton#WidgetGrip {{ color: {pal['text_dim']}; background: transparent; border: none; border-radius: {_rad(RAD_SM)}px; font-size: {_fs('fs_13')}; }}"
-            f"QPushButton#WidgetGrip:hover {{ background: {pal['hover_bg_strong']}; color: {pal['text_muted']}; }}"
-            f"QPushButton#WidgetCloseBtn, QPushButton#WidgetPinBtn {{ background: transparent; border: none; color: {pal['text_muted']}; border-radius: {_rad(RAD_SM)}px; font-size: {_fs('fs_12')}; }}"
-            f"QPushButton#WidgetCloseBtn:hover, QPushButton#WidgetPinBtn:hover {{ background: {pal['hover_bg_strong']}; color: {pal['text']}; }}"
+            f"#WidgetDragStrip {{ background: transparent; border: none; }}"
+            f"#WidgetDragStrip:hover {{ background: transparent; }}"
+            f"QPushButton#WidgetGrip {{ color: {pal['text_dim']}; background: transparent; border: none; font-size: {_fs('fs_13')}; }}"
+            f"QPushButton#WidgetGrip:hover {{ color: {pal['text_muted']}; }}"
+            f"QPushButton#WidgetCloseBtn, QPushButton#WidgetPinBtn {{ background: transparent; border: none; color: {pal['text_muted']}; font-size: {_fs('fs_12')}; }}"
+            f"QPushButton#WidgetCloseBtn:hover, QPushButton#WidgetPinBtn:hover {{ color: {pal['text']}; }}"
             f"QPushButton#WidgetResizeHandle {{ color: {pal['text_label']}; background: transparent; border: none; font-size: {_fs('fs_9')}; }}"
         )
         self.main_card.set_content_margins(0, None, 0, 0)
@@ -683,7 +684,7 @@ class MainWindow(QWidget):
         if pinned is None:
             pinned = bool(self.windowFlags() & Qt.WindowType.WindowStaysOnTopHint)
         p = current_palette()
-        color = p['accent_text'] if pinned else p['text_dim']
+        color = p['accent_text'] if pinned else p['text_muted']
         self.btn_pin.setText('')
         self.btn_pin.setIcon(pin_icon(_dp(15), color, pinned=pinned))
         self.btn_pin.setIconSize(QSize(_dp(15), _dp(15)))
@@ -898,14 +899,14 @@ class MainWindow(QWidget):
         pal = current_palette()
         if hasattr(self, "main_card") and self.main_card is not None:
             self.main_card.setStyleSheet(
-                f"#WidgetCard {{ background: {pal['bg_card']}; border: 1px solid {pal['line_hover']}; border-radius: {_rad(RAD_MD)}px; }}"
+                f"#WidgetCard {{ background: transparent; border: none; }}"
                 f"#WidgetCard:hover {{ border-color: {pal['line_strong']}; }}"
-                f"#WidgetDragStrip {{ background: {pal['bg_card_strip']}; border-bottom: 1px solid {pal['line']}; }}"
-                f"#WidgetDragStrip:hover {{ background: {pal['bg_card_strip_hover']}; }}"
-                f"QPushButton#WidgetGrip {{ color: {pal['text_dim']}; background: transparent; border: none; border-radius: {_rad(RAD_SM)}px; font-size: {_fs('fs_13')}; }}"
-                f"QPushButton#WidgetGrip:hover {{ background: {pal['hover_bg_strong']}; color: {pal['text_muted']}; }}"
-                f"QPushButton#WidgetCloseBtn, QPushButton#WidgetPinBtn {{ background: transparent; border: none; color: {pal['text_muted']}; border-radius: {_rad(RAD_SM)}px; font-size: {_fs('fs_12')}; }}"
-                f"QPushButton#WidgetCloseBtn:hover, QPushButton#WidgetPinBtn:hover {{ background: {pal['hover_bg_strong']}; color: {pal['text']}; }}"
+                f"#WidgetDragStrip {{ background: transparent; border: none; }}"
+                f"#WidgetDragStrip:hover {{ background: transparent; }}"
+                f"QPushButton#WidgetGrip {{ color: {pal['text_dim']}; background: transparent; border: none; font-size: {_fs('fs_13')}; }}"
+                f"QPushButton#WidgetGrip:hover {{ color: {pal['text_muted']}; }}"
+                f"QPushButton#WidgetCloseBtn, QPushButton#WidgetPinBtn {{ background: transparent; border: none; color: {pal['text_muted']}; font-size: {_fs('fs_12')}; }}"
+                f"QPushButton#WidgetCloseBtn:hover, QPushButton#WidgetPinBtn:hover {{ color: {pal['text']}; }}"
                 f"QPushButton#WidgetResizeHandle {{ color: {pal['text_label']}; background: transparent; border: none; font-size: {_fs('fs_9')}; }}"
             )
         if hasattr(self, "_main_container") and self._main_container is not None:
@@ -2332,7 +2333,7 @@ class MainWindow(QWidget):
         app = QApplication.instance()
         if app is None:
             return
-        from .theme import generate_qss, scale_qss
+        from .theme import control_surfaces_qss, generate_qss, scale_qss
         from .ui_tokens import set_app_ui_scale
         theme = self._state.settings.theme or 'dark'
         opacity = self._state.settings.card_opacity
@@ -2349,7 +2350,7 @@ class MainWindow(QWidget):
             theme, custom_palette=self._custom_palette, card_opacity=opacity,
             brightness=brightness, body_font_pt=settings.body_font_point_size,
             font_family=font_family_css,
-        ), settings.ui_scale_percent))
+        ), settings.ui_scale_percent) + control_surfaces_qss(settings.ui_scale_percent))
         app.setFont(build_body_font(settings.font_profile, settings.body_font_point_size, custom_family))
         # Notify image manager to re-apply theme
         if hasattr(self, '_image_manager') and self._image_manager is not None:

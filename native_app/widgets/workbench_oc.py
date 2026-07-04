@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import replace
 
 from PyQt6.QtCore import QPoint, QSize, Qt, pyqtSignal
+from PyQt6.QtGui import QPainter
 from PyQt6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -16,9 +17,11 @@ from PyQt6.QtWidgets import (
     QWidgetAction,
 )
 
+from ..icons import paint_rounded_surface
 from ..models import OCEntry
 from ..theme import _fs, current_palette
 from ..ui_tokens import RAD_SM, RAD_XS, _dp, _rad
+from .common import DashedCircleButton
 from .text_context_menu import apply_app_menu_style
 
 
@@ -53,6 +56,9 @@ class _OCBubble(QFrame):
         self._index = index
         self._entry = entry
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
+        # Corners are self-painted (antialiased) — QSS border-radius is not — so the
+        # popup must be translucent to let the rounded corners show through.
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
 
         root = QVBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
@@ -192,10 +198,17 @@ class _OCBubble(QFrame):
         self._entry = replace(self._entry, outfits=outfits)
         self.oc_changed.emit(self._index, self._entry)
 
+    def paintEvent(self, event):
+        from ..theme import current_palette
+        p = current_palette()
+        painter = QPainter(self)
+        paint_rounded_surface(
+            painter, self.rect(), _rad(RAD_SM), bg=p['bg_card'], border=p['line_strong']
+        )
+
     def apply_style(self) -> None:
         pal = current_palette()
         self.setStyleSheet(
-            f"QFrame#WorkbenchOCBubble {{ background: {pal['bg_card']}; border: 1px solid {pal['line_strong']}; border-radius: {_rad(RAD_SM)}px; }}"
             f"QWidget#WorkbenchOCBubbleHead, QWidget#WorkbenchOCBubbleSection {{ background: transparent; border-bottom: 1px solid {pal['line']}; }}"
             f"QLabel#WorkbenchOCBubbleAvatar {{ background: {pal['accent_sub']}; border: 1px solid {pal['accent_hover']}; border-radius: {_dp(16)}px; }}"
             f"QLabel#WorkbenchOCBubbleName {{ color: {pal['text']}; font-size: {_fs('fs_14')}; font-weight: 500; }}"
@@ -244,9 +257,8 @@ class WorkbenchOCStrip(QFrame):
         self._chips_layout.setSpacing(_dp(4))
         layout.addWidget(self._chips_host)
 
-        self._add_btn = QPushButton("+", self)
+        self._add_btn = DashedCircleButton("+", self)
         self._add_btn.setObjectName("WorkbenchOCAdd")
-        self._add_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._add_btn.setFixedSize(_dp(18), _dp(18))
         self._add_btn.clicked.connect(self._emit_add_requested)
         layout.addWidget(self._add_btn)
@@ -437,9 +449,9 @@ class WorkbenchOCStrip(QFrame):
             f"border: 1px solid {pal['accent']}; border-radius: {_rad(RAD_SM)}px; padding: {_dp(2)}px {_dp(8)}px; "
             f"font-size: {_fs('fs_10')}; text-align: left; }}"
             f"QPushButton#WorkbenchOCChip:hover {{ background: {pal['accent']}; border-color: {pal['accent_hover']}; }}"
-            f"QPushButton#WorkbenchOCAdd {{ background: transparent; color: {pal['text_label']}; border: 1px dashed {pal['line_strong']}; "
-            f"border-radius: {_dp(9)}px; padding: 0px; font-size: {_fs('fs_11')}; }}"
-            f"QPushButton#WorkbenchOCAdd:hover {{ color: {pal['accent_text']}; border-color: {pal['accent_hover']}; background: {pal['accent_sub']}; }}"
+            f"QPushButton#WorkbenchOCAdd {{ background: transparent; color: {pal['text_label']}; border: none; "
+            f"padding: 0px; font-size: {_fs('fs_11')}; }}"
+            f"QPushButton#WorkbenchOCAdd:hover {{ color: {pal['accent_text']}; }}"
         )
 
     @staticmethod

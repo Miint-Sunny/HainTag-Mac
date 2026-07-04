@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QKeyEvent, QTextCursor
-from PyQt6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QTextEdit, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QHBoxLayout, QLabel, QTextEdit, QVBoxLayout, QWidget
 
 from ..i18n import Translator
 from ..models import SEND_MODE_CTRL_ENTER, SEND_MODE_ENTER
 from ..theme import _fs, current_palette
 from ..ui_tokens import CLS_FIELD_LABEL, CLS_INPUT_EDITOR, RAD_SM, _dp, _rad
+from .common import HoverPillButton
 
 
 class InputWidget(QWidget):
@@ -41,14 +42,23 @@ class InputWidget(QWidget):
         footer.addWidget(self.token_label)
         footer.addStretch(1)
 
-        self.summary_button = QPushButton(self.action_bar)
+        # Surfaces self-painted by HoverPillButton (QSS border-radius corners
+        # alias); the QSS below only colours the glyphs.
+        self.summary_button = HoverPillButton("", self.action_bar)
         self.summary_button.setObjectName('WorkbenchFooterButton')
         self.summary_button.setFixedSize(_dp(30), _dp(28))
+        self.summary_button.set_pill_colors(
+            normal='bg_surface', hover='hover_bg_strong', disabled='disabled_bg',
+            border='line_hover',
+        )
         footer.addWidget(self.summary_button)
 
-        self.send_button = QPushButton(self.action_bar)
+        self.send_button = HoverPillButton("", self.action_bar)
         self.send_button.setObjectName('WorkbenchPrimaryButton')
         self.send_button.setFixedSize(_dp(30), _dp(28))
+        self.send_button.set_pill_colors(
+            normal='accent', hover='accent_hover', border='accent_hover',
+        )
         footer.addWidget(self.send_button)
 
         root.addWidget(self.action_bar, 0)
@@ -169,9 +179,7 @@ class InputWidget(QWidget):
             f"QTextEdit#WorkbenchInputEditor:focus {{ border-color: {p['line_strong']}; }}"
             f"QWidget#WorkbenchFooter {{ background: {p['bg_card_strip']}; }}"
             f"QLabel#TokenLabel {{ color: {p['text_muted']}; font-size: {_fs('fs_12')}; }}"
-            f"QPushButton#WorkbenchFooterButton {{ background: {p['bg_surface']}; color: {p['text']}; border: 1px solid {p['line_hover']}; border-radius: {_rad(RAD_SM)}px; }}"
-            f"QPushButton#WorkbenchFooterButton:hover {{ background: {p['hover_bg_strong']}; }}"
-            f"QPushButton#WorkbenchFooterButton:disabled {{ color: {p['disabled_text']}; background: {p['disabled_bg']}; }}"
-            f"QPushButton#WorkbenchPrimaryButton {{ background: {p['accent']}; color: {p['accent_text']}; border: 1px solid {p['accent_hover']}; border-radius: {_rad(RAD_SM)}px; }}"
-            f"QPushButton#WorkbenchPrimaryButton:hover {{ background: {p['accent_hover']}; }}"
+            f"QPushButton#WorkbenchFooterButton {{ background: transparent; color: {p['text']}; border: none; }}"
+            f"QPushButton#WorkbenchFooterButton:disabled {{ color: {p['disabled_text']}; }}"
+            f"QPushButton#WorkbenchPrimaryButton {{ background: transparent; color: {p['accent_text']}; border: none; }}"
         )

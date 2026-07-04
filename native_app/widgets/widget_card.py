@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-from PyQt6.QtCore import QEvent, QPoint, QRect, QSize, Qt, pyqtSignal
-from PyQt6.QtWidgets import QFrame, QPushButton, QVBoxLayout, QWidget
+from PyQt6.QtCore import QEvent, QPoint, QRect, QRectF, QSize, Qt, pyqtSignal
+from PyQt6.QtGui import QColor, QPainter, QPen
+from PyQt6.QtWidgets import QFrame, QVBoxLayout, QWidget
 
 from ..theme import _fs, current_palette
-from ..icons import pin_icon
-from ..ui_tokens import WIDGET_RESIZE_CORNER, WIDGET_RESIZE_EDGE, WIDGET_RESIZE_HINT, RAD_SM, _dp, _rad
+from ..icons import pin_icon, rounded_rect_path, to_qcolor
+from ..ui_tokens import WIDGET_RESIZE_CORNER, WIDGET_RESIZE_EDGE, WIDGET_RESIZE_HINT, RAD_MD, _dp, _rad
 
 from PyQt6.QtWidgets import QLabel
-from .common import compute_resized_rect
+from .common import HoverPillButton, compute_resized_rect
 
 
 class WidgetCard(QFrame):
@@ -23,6 +24,10 @@ class WidgetCard(QFrame):
         super().__init__(parent)
         self.widget_id = widget_id
         self.setObjectName("WidgetCard")
+        # Corners are self-painted (antialiased) — QSS border-radius is not — so the
+        # widget must be translucent to let the rounded corners show the parent.
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        self._border_key = 'line_strong'  # main card overrides to 'line_hover'
         self.setMouseTracking(True)
         self._min_size = min_size
         self.setMinimumSize(min_size)
@@ -53,7 +58,7 @@ class WidgetCard(QFrame):
         self._drag_strip.setMouseTracking(True)
         self._drag_strip.setAcceptDrops(True)  # block drops from reaching content below
 
-        self._grip = QPushButton("⠇", self._drag_strip)
+        self._grip = HoverPillButton("⠇", self._drag_strip)
         self._grip.setObjectName("WidgetGrip")
         self._grip.setCursor(Qt.CursorShape.OpenHandCursor)
         self._grip.setFixedSize(_dp(48), _dp(28))
@@ -67,7 +72,7 @@ class WidgetCard(QFrame):
             f"border: none; letter-spacing: 1px;"
         )
 
-        self._close_btn = QPushButton("×", self._drag_strip)
+        self._close_btn = HoverPillButton("×", self._drag_strip)
         self._close_btn.setObjectName("WidgetCloseBtn")
         self._close_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._close_btn.setFixedSize(_dp(24), _dp(24))
@@ -75,7 +80,7 @@ class WidgetCard(QFrame):
         self._close_btn.setToolTip("")  # set by retranslate_ui
         self._close_btn.clicked.connect(self._close_action)
 
-        self._pin_btn = QPushButton(self._drag_strip)
+        self._pin_btn = HoverPillButton("", self._drag_strip)
         self._pin_btn.setObjectName("WidgetPinBtn")
         self._pin_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._pin_btn.setFixedSize(_dp(24), _dp(24))
@@ -85,8 +90,10 @@ class WidgetCard(QFrame):
         self._title_action_widgets: list[QWidget] = []
         self._title_extra_widget: QWidget | None = None
 
-        self._resize_handle = QPushButton("◢", self)
+        self._resize_handle = HoverPillButton("◢", self)
         self._resize_handle.setObjectName("WidgetResizeHandle")
+        # Static pill (mouse events pass through — no hover state to show)
+        self._resize_handle.set_pill_colors(normal='hover_bg', hover='hover_bg')
         self._resize_handle.setCursor(Qt.CursorShape.SizeFDiagCursor)
         self._resize_handle.setFixedSize(_dp(WIDGET_RESIZE_HINT), _dp(WIDGET_RESIZE_HINT))
         self._resize_handle.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
@@ -166,6 +173,8 @@ class WidgetCard(QFrame):
         if enabled:
             self._grip.setText("⠿")
             self._grip.setFixedSize(_dp(28), _dp(28))
+            # Workbench chrome shows the bare ◢ glyph without a pill
+            self._resize_handle.set_pill_colors(normal=None, hover=None)
         self._update_pin_style()
         self.updateGeometry()
 
@@ -204,7 +213,37 @@ class WidgetCard(QFrame):
         self.raise_()
         super().mousePressEvent(event)
 
+    def set_border_key(self, key: str) -> None:
+        """Palette key for the card border colour (main card uses 'line_hover')."""
+        self._border_key = key
+        self.update()
+
+    def paintEvent(self, event) -> None:
+        pal = current_palette()
+        radius = float(_rad(RAD_MD))
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        full = QRectF(self.rect()).adjusted(0.5, 0.5, -0.5, -0.5)
+        body = rounded_rect_path(full, radius)
+        # Card body fill
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(to_qcolor(pal['bg_card']))
+        painter.drawPath(body)
+        # Header strip (rounded top corners only), hover-lit
+        sh = float(self._drag_strip_height)
+        strip_key = 'bg_card_strip_hover' if self._drag_strip.underMouse() else 'bg_card_strip'
+        painter.setBrush(to_qcolor(pal[strip_key]))
+        painter.drawPath(rounded_rect_path(QRectF(0.5, 0.5, self.width() - 1.0, sh), radius, top_only=True))
+        # Strip bottom hairline
+        painter.fillRect(QRectF(0.5, sh, self.width() - 1.0, 1.0), to_qcolor(pal['line']))
+        # Antialiased border
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.setPen(QPen(to_qcolor(pal.get(self._border_key, pal['line_strong'])), 1.0))
+        painter.drawPath(body)
+
     def eventFilter(self, watched, event) -> bool:
+        if watched is self._drag_strip and event.type() in (QEvent.Type.Enter, QEvent.Type.Leave):
+            self.update()  # repaint the self-drawn strip for its hover tint
         if watched is self._drag_strip or watched is self._grip:
             return self._handle_drag_event(watched, event)
         if watched in self._resize_handles.values():
@@ -318,30 +357,24 @@ class WidgetCard(QFrame):
         self.close_requested.emit(self.widget_id)
 
     def _update_pin_style(self) -> None:
+        # Pill backgrounds are self-painted by HoverPillButton (antialiased);
+        # the inline QSS below only sets glyph colour/metrics.
         p = current_palette()
-        if self._plain_pin_icons:
-            color = p['accent_text'] if self._pinned else p['text_muted']
-            bg = p['accent'] if self._pinned else 'transparent'
-            self._pin_btn.setStyleSheet(
-                f"color: {color}; background: {bg}; border: none; border-radius: {_rad(RAD_SM)}px; padding: 0 {_dp(4)}px; font-size: {_fs('fs_12')};"
-            )
-            self._close_btn.setStyleSheet(
-                f"color: {p['text_muted']}; background: transparent; border: none; border-radius: {_rad(RAD_SM)}px; font-size: {_fs('fs_12')};"
-            )
-            self._pin_btn.setText('●' if self._pinned else '○')
-            self._pin_btn.setToolTip(self._pin_off_title if self._pinned else self._pin_on_title)
-            return
-        color = p['accent_text'] if self._pinned else p['text_dim']
-        bg = p['accent'] if self._pinned else 'transparent'
-        border = p['accent'] if self._pinned else 'transparent'
+        self._pin_btn.set_pill_colors(
+            normal='accent' if self._pinned else None,
+            hover='accent_hover' if self._pinned else 'hover_bg_strong',
+        )
+        text_color = p['text_muted'] if self._plain_pin_icons else p['text_dim']
+        color = p['accent_text'] if self._pinned else text_color
         self._pin_btn.setStyleSheet(
-            f"color: {color}; background: {bg}; border: 1px solid {border}; border-radius: {_rad(RAD_SM)}px; padding: 0 {_dp(4)}px; font-size: {_fs('fs_12')};"
+            f"color: {color}; background: transparent; border: none; padding: 0 {_dp(4)}px; font-size: {_fs('fs_12')};"
         )
         self._close_btn.setStyleSheet(
-            f"color: {p['text_dim']}; background: transparent; border: none; font-size: {_fs('fs_12')};"
+            f"color: {text_color}; background: transparent; border: none; font-size: {_fs('fs_12')};"
         )
         self._pin_btn.setText('')
-        self._pin_btn.setIcon(pin_icon(_dp(14), color, pinned=self._pinned))
+        icon_color = p['accent_text'] if self._pinned else p['text_muted']
+        self._pin_btn.setIcon(pin_icon(_dp(14), icon_color, pinned=self._pinned))
         self._pin_btn.setIconSize(QSize(_dp(14), _dp(14)))
         self._pin_btn.setToolTip(self._pin_off_title if self._pinned else self._pin_on_title)
 
