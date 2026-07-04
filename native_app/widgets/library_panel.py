@@ -22,7 +22,7 @@ from ..models import ArtistEntry, OCEntry
 from ..storage import AppStorage
 from ..theme import _fs, current_palette
 from ..ui_tokens import _dp, _rad, RAD_XS, RAD_SM
-from .common import ToggleSwitch
+from .common import DashedRectButton, ToggleSwitch
 
 SECTION_ARTIST = "artist"
 SECTION_OC = "oc"
@@ -94,8 +94,8 @@ class _RefImageGrid(QWidget):
             self._layout.setContentsMargins(0, 2, 0, 2)
             self._layout.setSpacing(_dp(4))
 
-        self._add_btn = QPushButton("+", self)
-        self._add_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._add_btn = DashedRectButton("+", self, border='line', border_hover='line_strong',
+                                         bg='bg_content')
         if vertical:
             self._add_btn.setFixedHeight(_dp(28))
         else:
@@ -107,10 +107,10 @@ class _RefImageGrid(QWidget):
         self._apply_btn_style()
 
     def _apply_btn_style(self):
+        # Dashed rounded surface self-painted (antialiased) in DashedRectButton.
         p = _p()
         self._add_btn.setStyleSheet(
-            f"background: {p['bg_content']}; border: 1px dashed {p['line']}; "
-            f"border-radius: {_rad(RAD_SM)}px; color: {p['text_dim']}; font-size: {_fs('fs_14')};"
+            f"background: transparent; border: none; color: {p['text_dim']}; font-size: {_fs('fs_14')};"
         )
 
     def set_paths(self, paths: list[str]):

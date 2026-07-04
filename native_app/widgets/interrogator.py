@@ -6,7 +6,7 @@ import sys
 from functools import partial
 
 from PyQt6.QtCore import QRect, QSize, Qt, QThread, QTimer, QUrl, pyqtSignal
-from PyQt6.QtGui import QColor, QDesktopServices, QIcon, QKeySequence, QPixmap, QShortcut
+from PyQt6.QtGui import QColor, QDesktopServices, QIcon, QKeySequence, QPainter, QPixmap, QShortcut
 from PyQt6.QtWidgets import (
     QApplication,
     QComboBox,
@@ -33,6 +33,8 @@ from ..i18n import Translator
 from ..file_filters import image_filter, python_filter
 from ..theme import _fs, current_palette, is_theme_light
 from ..ui_tokens import _dp, _rad, RAD_SM, RAD_XS
+from ..icons import paint_rounded_surface
+from .common import DashedRectButton
 from .output_widget import CATEGORY_COLORS, CATEGORY_COLORS_LIGHT
 
 
@@ -824,16 +826,12 @@ class _LocalTaggerTab(QWidget):
             f"QWidget#LocalInferFooter {{ background: {c['bg2']}; border-top: 1px solid {c['line']}; }}"
             f"QScrollArea#LocalResultScroll {{ background: {c['bg1']}; border: none; }}"
             f"QWidget#LocalResultContainer {{ background: {c['bg1']}; }}"
-            f"QFrame#LocalSingleDrop {{ background: {c['bg0']}; border: 1.5px dashed {c['dash']}; border-radius: {_rad(RAD_XS)}px; }}"
-            f"QFrame#LocalSingleDrop:hover {{ border-color: {c['fg3']}; }}"
         )
         self._gen_slider.setStyleSheet(slider_style)
         self._char_slider.setStyleSheet(slider_style)
+        # Dashed drop-pad outline is self-painted (antialiased) in _DropZone.
+        self._drop_zone.set_dashed(True)
         self._drop_zone.apply_theme()
-        self._drop_zone.setStyleSheet(
-            f"QFrame#LocalSingleDrop {{ background: {c['bg0']}; border: 1.5px dashed {c['dash']}; border-radius: {_rad(RAD_XS)}px; }}"
-            f"QFrame#LocalSingleDrop:hover {{ border-color: {c['fg3']}; }}"
-        )
         self._drop_zone._label.setText(
             self._lt("interrogator_drop_image", "拖入图片或点击选择")
             + "\n"
@@ -2783,16 +2781,16 @@ class _LLMTaggerTab(QWidget):
             thumb.remove_requested.connect(self._remove_image)
             self._thumb_layout.addWidget(thumb)
 
-        add_btn = QPushButton("+", self._thumb_container)
+        add_btn = DashedRectButton("+", self._thumb_container, radius_token=RAD_XS,
+                                   border='line_strong', border_hover='text_muted')
         add_btn.setFixedSize(_dp(thumb_w), _dp(thumb_h))
-        add_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         add_btn.setToolTip(self._t.t("llm_tagger_add_images"))
         add_btn.clicked.connect(self._add_images_dialog)
         c = _llm_colors()
         add_btn.setStyleSheet(
-            f"QPushButton {{ background: transparent; color: {c['fg3']}; border: 1px dashed {c['dash']}; "
-            f"border-radius: {_rad(RAD_XS)}px; font-size: {_fs('fs_12')}; padding: 0px; }}"
-            f"QPushButton:hover {{ color: {c['fg1']}; border-color: {c['fg2']}; }}"
+            f"QPushButton {{ background: transparent; color: {c['fg3']}; border: none; "
+            f"font-size: {_fs('fs_12')}; padding: 0px; }}"
+            f"QPushButton:hover {{ color: {c['fg1']}; }}"
         )
         self._thumb_layout.addWidget(add_btn)
         self._thumb_layout.addStretch()
@@ -2928,10 +2926,9 @@ class _LLMTaggerTab(QWidget):
         self._error_label.setStyleSheet(f"color: {c['hot']}; font-size: {_fs('fs_10')};")
         self._tag_container.setStyleSheet(f"background: {c['bg1']};")
         self._thumb_container.setStyleSheet(f"background: {c['bg1']};")
+        # Dashed drop-pad outline is self-painted (antialiased) in _DropZone.
+        self._drop_zone.set_dashed(True)
         self._drop_zone.apply_theme()
-        self._drop_zone.setStyleSheet(
-            f"background: {c['bg0']}; border: 1.5px dashed {c['dash']}; border-radius: {_rad(RAD_SM)}px;"
-        )
         self._drop_zone._label.setStyleSheet(
             f"color: {c['fg2']}; font-size: {_fs('fs_11')}; border: none;"
         )
@@ -2971,6 +2968,10 @@ class _DropZone(QFrame):
         super().__init__(parent)
         self._t = translator
         self._multi = multi
+        self._dashed = False  # set_dashed() switches to a dashed drop-pad outline
+        # Surface (fill + rounded border, solid or dashed) is self-painted with
+        # antialiasing in paintEvent — QSS border-radius corners are not.
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.setAcceptDrops(True)
         self.setMinimumHeight(_dp(48))
         self.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -2990,12 +2991,38 @@ class _DropZone(QFrame):
 
         self.apply_theme()
 
+    def set_dashed(self, dashed: bool) -> None:
+        """Render a dashed drop-pad outline instead of a solid border."""
+        self._dashed = bool(dashed)
+        self.update()
+
+    def enterEvent(self, event):
+        self.update()
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        self.update()
+        super().leaveEvent(event)
+
+    def paintEvent(self, event):
+        p = current_palette()
+        hovered = self.underMouse()
+        painter = QPainter(self)
+        paint_rounded_surface(
+            painter, self.rect(), _rad(RAD_SM),
+            bg=p['bg_input'],
+            border=p['text_muted'] if hovered else p['line_strong'],
+            border_w=1.5 if self._dashed else 1.0,
+            dashed=self._dashed,
+        )
+        painter.end()
+
     def apply_theme(self):
         p = current_palette()
-        self.setStyleSheet(
-            f"background: {p['bg_input']}; border: 1px solid {p['line']}; border-radius: {_rad(RAD_SM)}px;"
-        )
+        # Surface self-painted; QSS only styles the inner hint label.
+        self.setStyleSheet("")
         self._label.setStyleSheet(f"color: {p['text_dim']}; font-size: {_fs('fs_10')}; border: none;")
+        self.update()
 
     def mousePressEvent(self, event):
         if event.button() != Qt.MouseButton.LeftButton:

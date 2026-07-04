@@ -35,7 +35,7 @@ from ..ui_tokens import (
     CLS_PROMPT_TEXT,
     _dp,
 )
-from .common import DragHandleLabel, ToggleSwitch
+from .common import DashedRectButton, DragHandleLabel, ToggleSwitch
 from .text_context_menu import install_localized_context_menus
 
 
@@ -430,12 +430,12 @@ class PromptManagerWidget(QWidget):
         # Bottom row: add button + preview button
         btn_row = QHBoxLayout()
         btn_row.setSpacing(_dp(6))
-        self.add_button = QPushButton(self)
+        self.add_button = DashedRectButton(parent=self, border='line_hover')
         self.add_button.setObjectName("GhostButton")
         self.add_button.clicked.connect(self._add_prompt)
         btn_row.addWidget(self.add_button)
         btn_row.addStretch()
-        self.preview_button = QPushButton("⋯", self)
+        self.preview_button = DashedRectButton("⋯", self, border='line_hover')
         self.preview_button.setObjectName("GhostButton")
         self.preview_button.setFixedWidth(_dp(32))
         self.preview_button.setCursor(Qt.CursorShape.PointingHandCursor)

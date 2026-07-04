@@ -28,6 +28,7 @@ from ..ui_tokens import (
     CLS_IMAGE_SELECT_BUTTON,
     _dp,
 )
+from .common import DashedRectButton
 from .text_context_menu import install_localized_context_menus
 
 
@@ -77,7 +78,7 @@ class ExampleWidget(QWidget):
         form.addRow(self.depth_label_inline, self.depth_spin)
         top_row.addLayout(form)
 
-        self.image_button = QPushButton(self)
+        self.image_button = DashedRectButton(parent=self, border='line_hover', bg='bg_input')
         self.image_button.setProperty("class", CLS_IMAGE_SELECT_BUTTON)
         self.image_button.setFixedSize(_dp(112), _dp(112))
         self.image_button.clicked.connect(self._select_image)
