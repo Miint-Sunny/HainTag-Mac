@@ -1,10 +1,18 @@
 from __future__ import annotations
 
-from PyQt6.QtCore import QPoint, QRect, Qt, pyqtSignal
+from PyQt6.QtCore import QPoint, QRect, QRectF, Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QMouseEvent, QPainter
-from PyQt6.QtWidgets import QCheckBox, QLabel, QPushButton
+from PyQt6.QtWidgets import (
+    QCheckBox,
+    QLabel,
+    QPushButton,
+    QSlider,
+    QStyle,
+    QStyleOptionSlider,
+    QWidget,
+)
 
-from ..icons import paint_rounded_surface
+from ..icons import paint_rounded_surface, to_qcolor
 from ..theme import current_palette, is_theme_light
 from ..ui_tokens import RAD_SM, _dp, _rad
 
@@ -237,6 +245,51 @@ class DashedRectButton(QPushButton):
         )
         painter.end()
         super().paintEvent(event)
+
+
+class RoundHandleSlider(QSlider):
+    """QSlider whose knob is a self-painted antialiased circle — QSS
+    border-radius handles rasterise the circle with visible stair-stepping.
+    The groove/sub-page stay QSS (2px, no visible aliasing); the widget's QSS
+    must set the handle `background: transparent` while KEEPING its
+    width/height/margin so subControlRect still lays the knob out — only this
+    crisp circle then shows. Colours are palette KEYS resolved at paint time."""
+
+    def __init__(self, orientation, parent: QWidget | None = None, *,
+                 handle_key: str = 'accent_handle',
+                 handle_hover_key: str = 'accent_text') -> None:
+        super().__init__(orientation, parent)
+        self._handle_key = handle_key
+        self._handle_hover_key = handle_hover_key
+
+    def paintEvent(self, event) -> None:
+        super().paintEvent(event)  # groove + sub-page (QSS); handle transparent
+        opt = QStyleOptionSlider()
+        self.initStyleOption(opt)
+        rect = self.style().subControlRect(
+            QStyle.ComplexControl.CC_Slider, opt,
+            QStyle.SubControl.SC_SliderHandle, self,
+        )
+        if rect.isEmpty():
+            return
+        pal = current_palette()
+        key = self._handle_hover_key if (self.isEnabled() and self.underMouse()) else self._handle_key
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(to_qcolor(pal[key]))
+        d = float(min(rect.width(), rect.height()))
+        c = rect.center()
+        painter.drawEllipse(QRectF(c.x() + 0.5 - d / 2.0, c.y() + 0.5 - d / 2.0, d, d))
+        painter.end()
+
+    def enterEvent(self, event) -> None:
+        self.update()
+        super().enterEvent(event)
+
+    def leaveEvent(self, event) -> None:
+        self.update()
+        super().leaveEvent(event)
 
 
 class DragHandleLabel(QLabel):

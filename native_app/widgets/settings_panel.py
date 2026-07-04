@@ -50,7 +50,7 @@ from ..ui_tokens import (
     _dp,
     _rad,
 )
-from .common import ToggleSwitch
+from .common import RoundHandleSlider, ToggleSwitch
 
 
 class SettingsPanel(QWidget):
@@ -347,7 +347,7 @@ class SettingsPanel(QWidget):
         value_label.setProperty('class', CLS_SLIDER_VALUE)
         row.addWidget(value_label)
         self.body_layout.addLayout(row)
-        slider = QSlider(Qt.Orientation.Horizontal, parent)
+        slider = RoundHandleSlider(Qt.Orientation.Horizontal, parent)
         slider.setRange(minimum, maximum)
         slider.setValue(default)
         slider.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
