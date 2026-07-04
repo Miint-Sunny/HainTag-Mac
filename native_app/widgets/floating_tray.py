@@ -2,10 +2,11 @@
 from __future__ import annotations
 
 from PyQt6.QtCore import QEvent, QPoint, QRect, Qt, pyqtSignal
-from PyQt6.QtGui import QGuiApplication
+from PyQt6.QtGui import QGuiApplication, QPainter
 from PyQt6.QtWidgets import QHBoxLayout, QLabel, QMenu, QPushButton, QVBoxLayout, QWidget
 
 from ..i18n import Translator
+from ..icons import paint_rounded_surface
 from ..models import FloatingTrayMemberState, FloatingTrayState
 from ..theme import _fs, current_palette
 from ..ui_tokens import RAD_SM, RAD_XS, _dp, _rad
@@ -20,6 +21,9 @@ class FloatingTrayWidget(QWidget):
     def __init__(self, translator: Translator, parent=None):
         super().__init__(parent, Qt.WindowType.Tool | Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)
         self.setObjectName("FloatingTray")
+        # Corners are self-painted (antialiased) via paintEvent — QSS border-radius
+        # is not — so the widget must be translucent for the rounded corners to show.
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(
             lambda pos: self._show_context_menu(self.mapToGlobal(pos))
@@ -220,7 +224,6 @@ class FloatingTrayWidget(QWidget):
         self.setMinimumWidth(_dp(112))
         self.setMaximumWidth(_dp(160))
         self.setStyleSheet(
-            f"#FloatingTray {{ background: {p['bg_surface']}; border: 1px solid {p['line_strong']}; border-radius: {_rad(RAD_SM)}px; }}"
             f" QLabel {{ color: {p['text']}; font-size: {_fs('fs_10')}; }}"
             f" QPushButton#FloatingTrayClose {{ color: {p['text_dim']}; background: transparent; border: none; border-radius: {_rad(RAD_XS)}px; font-size: {_fs('fs_11')}; }}"
             f" QPushButton#FloatingTrayClose:hover {{ color: {p['text']}; background: {p['hover_bg_strong']}; }}"
@@ -234,6 +237,14 @@ class FloatingTrayWidget(QWidget):
         )
         self._close_btn.setFixedSize(_dp(18), _dp(18))
         self._refresh_active_buttons()
+
+    def paintEvent(self, event) -> None:
+        p = current_palette()
+        painter = QPainter(self)
+        paint_rounded_surface(
+            painter, self.rect(), _rad(RAD_SM),
+            bg=p['bg_surface'], border=p['line_strong'],
+        )
 
     def eventFilter(self, watched, event) -> bool:
         if watched is self._title and self._handle_drag_event(event):

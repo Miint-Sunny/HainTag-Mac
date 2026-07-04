@@ -3,6 +3,7 @@ from __future__ import annotations
 from functools import partial
 
 from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtGui import QPainter
 from PyQt6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -71,7 +72,7 @@ class SettingsPanel(QWidget):
         self._font_profile = 'default'
         self._custom_font_id = ''
         self.setObjectName('SettingsPanel')
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
 
         root = QVBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
@@ -306,6 +307,14 @@ class SettingsPanel(QWidget):
         self.memory_toggle.toggled.connect(self.settings_changed)
         self._tag_dictionary = None
         self.retranslate_ui()
+
+    def paintEvent(self, event) -> None:
+        from ..theme import current_palette
+        from ..icons import paint_rounded_surface
+        p = current_palette()
+        painter = QPainter(self)
+        paint_rounded_surface(painter, self.rect(), float(_rad(RAD_MD)),
+                              bg=p['bg_settings'], border=p['line'])
 
     def set_tag_dictionary(self, dictionary) -> None:
         from .tag_completer import install_completer_recursive

@@ -236,9 +236,9 @@ QPushButton#CloseButton:hover {{
 
 /* ── Dock Panel ── */
 #DockPanel {{
-    background: {bg_dock};
-    border: 1px solid {line};
-    border-radius: {rad_md};
+    /* body + border self-painted (antialiased) in DockPanel.paintEvent */
+    background: transparent;
+    border: none;
 }}
 
 QPushButton#DockToggle {{
@@ -294,32 +294,24 @@ QPushButton[class="DockItemButton"] {{
 }}
 
 /* ── Widget Cards ── */
+/* Body, header strip and border are self-painted with antialiasing in
+   WidgetCard.paintEvent (QSS border-radius corners are not antialiased). */
 #WidgetCard {{
-    background: {bg_card};
-    border: 1px solid {line_strong};
-    border-radius: {rad_md};
-}}
-
-#WidgetCard:hover {{
-    border-color: {line_hover};
+    background: transparent;
+    border: none;
 }}
 
 #WidgetDragStrip {{
-    background: {bg_card_strip};
-    /* No corner radius: the strip is a plain rectangle INSIDE the card, so the
-       card's own rounded corner is the single antialiased edge (was doubled). */
-    border-bottom: 1px solid {line};
+    background: transparent;
+    border: none;
 }}
 
-#WidgetDragStrip:hover {{
-    background: {bg_card_strip_hover};
-}}
-
+/* Grip/resize pill backgrounds are self-painted by HoverPillButton
+   (antialiased) — QSS keeps them transparent and only colours the glyph. */
 QPushButton#WidgetGrip {{
     color: {text_dim};
     border: none;
     background: transparent;
-    border-radius: {rad_sm};
     font-size: {fs_12};
     font-weight: 500;
 }}
@@ -327,14 +319,12 @@ QPushButton#WidgetGrip {{
 QPushButton#WidgetResizeHandle {{
     color: {text_dim};
     border: none;
-    background: {hover_bg};
-    border-radius: {rad_sm};
+    background: transparent;
     font-size: {fs_10};
     font-weight: 500;
 }}
 
 QPushButton#WidgetGrip:hover {{
-    background: {hover_bg_strong};
     color: {text_muted};
 }}
 
@@ -435,7 +425,6 @@ QAbstractItemView {{
 
 QPushButton#SecondaryIconButton,
 QPushButton#PrimaryIconButton,
-QPushButton#GhostButton,
 QPushButton#SecondaryButton,
 QPushButton#PrimaryButton {{
     border-radius: {rad_sm};
@@ -479,14 +468,13 @@ QPushButton#PrimaryButton:hover {{
 }}
 
 QPushButton#GhostButton {{
-    border: 1px dashed {line_hover};
+    /* Dashed rounded border is self-painted (antialiased) by DashedRectButton;
+       QSS keeps it borderless so the QSS dashed corners don't alias. */
+    border: none;
     background: transparent;
     color: {text_muted};
-}}
-
-QPushButton#GhostButton:hover {{
-    background: {hover_bg};
-    border-color: {line_strong};
+    min-height: 30px;
+    padding: 4px 10px;
 }}
 
 QPushButton#SecondaryButton {{
@@ -510,9 +498,9 @@ QPushButton:disabled {{
 }}
 
 #SettingsPanel {{
-    background: {bg_settings};
-    border: 1px solid {line};
-    border-radius: {rad_md};
+    /* body + border self-painted (antialiased) in SettingsPanel.paintEvent */
+    background: transparent;
+    border: none;
 }}
 
 #PanelHeader {{
@@ -625,16 +613,15 @@ QFrame[class="PromptEntryFrame"][expanded="true"] QLabel[class="PromptExpandIndi
 }}
 
 QPushButton[class="ImageSelectButton"] {{
-    border: 1px dashed {line_hover};
-    border-radius: {rad_sm};
-    background: {bg_input};
+    /* Dashed rounded surface self-painted (antialiased) by DashedRectButton. */
+    border: none;
+    background: transparent;
     color: {text_muted};
     font-size: {fs_12};
     padding: 8px;
 }}
 
 QPushButton[class="ImageSelectButton"]:hover {{
-    border-color: {line_strong};
     color: {text_body};
 }}
 
@@ -1096,6 +1083,94 @@ def scale_qss(qss: str, scale_percent: int) -> str:
         return f"{max(1, round(int(m.group(1)) * factor))}px"
 
     return re.sub(r'(\d+)px', _replace, qss)
+
+
+def control_surfaces_qss(scale_percent: int = 100) -> str:
+    """Appended override rules that re-skin rounded CONTROLS with pre-rendered
+    antialiased 9-patch surfaces (see qss_surfaces.py) — Qt's own QSS
+    border-radius corners are not antialiased.
+
+    Appended AFTER scale_qss() output, so values here are already UI-scaled
+    (scale_qss would otherwise double-scale the px and break the fixed image
+    slice numbers). border-width == slice eats the content box; padding and
+    min-sizes below compensate so control geometry stays as the template laid
+    it out. First wave: Primary/Secondary(+Icon) buttons, the input family and
+    QMenu — the visibly-rounded controls. Ghost stays QSS (dashed border can't
+    9-patch); scrollbars/sliders stay QSS (2px radius, no visible aliasing).
+    """
+    from .qss_surfaces import surface_decl
+
+    p = _current_palette if _current_palette else dict(DARK_PALETTE)
+    f = max(0.5, min(3.0, scale_percent / 100.0))
+
+    def px(n: float) -> int:
+        return max(0, round(n * f))
+
+    r = max(2, round(6 * f))   # control corner radius (rad_sm), UI-scaled
+    s = r + 1                  # 9-patch slice == border-width
+
+    # Button metrics: template gives content min-height 30, padding 4/10,
+    # border 0 — keep the TOTAL box identical under the new s-px border.
+    btn_pad_v = max(0, px(4) - s)
+    btn_pad_h = max(0, px(10) - s)
+    btn_mh = max(0, px(30) - 2 * max(0, s - px(4)))
+    icon_sz = max(8, px(32) - 2 * s)  # fixed 32px icon buttons
+
+    # Inputs: padding 6/8 + 1px border.
+    in_pad_v = max(0, px(6) + px(1) - s)
+    in_pad_h = max(0, px(8) + px(1) - s)
+
+    inputs_sel = ', '.join((
+        'QLineEdit[class="FieldInput"]', 'QSpinBox[class="FieldSpin"]',
+        'QComboBox[class="FieldCombo"]', 'QTextEdit[class="FieldInput"]',
+        'QTextEdit[class="PromptTextEdit"]', 'QTextEdit[class="SummaryTextEdit"]',
+        'QTextEdit[class="InputEditor"]', 'QTextEdit[class="ExampleTextEdit"]',
+        'QTextEdit[class="OutputEditor"]', 'QTextEdit[class="MetadataText"]',
+    ))
+    inputs_focus_sel = ', '.join(sel + ':focus' for sel in inputs_sel.split(', '))
+
+    return f"""
+/* ── AA control surfaces (appended overrides; see control_surfaces_qss) ── */
+QPushButton#SecondaryIconButton, QPushButton#SecondaryButton {{
+    {surface_decl(r, p['hover_bg_strong'])}
+}}
+QPushButton#SecondaryIconButton:hover, QPushButton#SecondaryButton:hover {{
+    {surface_decl(r, p['line_hover'])}
+}}
+QPushButton#PrimaryIconButton, QPushButton#PrimaryButton {{
+    {surface_decl(r, p['accent'])}
+}}
+QPushButton#PrimaryIconButton:hover, QPushButton#PrimaryButton:hover {{
+    {surface_decl(r, p['accent_hover'])}
+}}
+QPushButton#SecondaryButton, QPushButton#PrimaryButton {{
+    padding: {btn_pad_v}px {btn_pad_h}px;
+    min-height: {btn_mh}px;
+}}
+QPushButton#SecondaryIconButton, QPushButton#PrimaryIconButton {{
+    padding: 0;
+    min-width: {icon_sz}px; max-width: {icon_sz}px;
+    min-height: {icon_sz}px; max-height: {icon_sz}px;
+}}
+{inputs_sel} {{
+    {surface_decl(r, p['bg_input'], p['line'])}
+    padding: {in_pad_v}px {in_pad_h}px;
+}}
+{inputs_focus_sel} {{
+    {surface_decl(r, p['bg_input'], p['accent_hover'])}
+}}
+QMenu {{
+    {surface_decl(r, p['bg_menu'], p['line_hover'])}
+    padding: {max(0, px(6) + px(1) - s)}px;
+}}
+QMenu::item {{
+    {surface_decl(r, 'rgba(0, 0, 0, 0)')}
+    padding: {max(0, px(7) - s)}px {max(0, px(12) - s)}px;
+}}
+QMenu::item:selected {{
+    {surface_decl(r, p['hover_bg_strong'])}
+}}
+"""
 
 
 # Keep backward compat — APP_QSS is now generated on import (dark default)

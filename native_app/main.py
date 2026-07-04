@@ -10,7 +10,7 @@ from .error_reporting import format_exception_details, report_error, runtime_mod
 from .font_loader import build_body_font, load_app_fonts
 from .i18n import Translator
 from .storage import AppStorage
-from .theme import generate_qss, scale_qss
+from .theme import control_surfaces_qss, generate_qss, scale_qss
 from .window import MainWindow
 
 
@@ -82,7 +82,7 @@ def main() -> int:
             card_opacity=settings.card_opacity, brightness=settings.bg_brightness,
             body_font_pt=settings.body_font_point_size,
             font_family=font_family_css,
-        ), settings.ui_scale_percent))
+        ), settings.ui_scale_percent) + control_surfaces_qss(settings.ui_scale_percent))
 
         window = MainWindow(storage, translator)
         window.show()

@@ -3,7 +3,7 @@ from __future__ import annotations
 from html import escape
 
 from PyQt6.QtCore import QPoint, Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QKeyEvent, QTextCursor
+from PyQt6.QtGui import QKeyEvent, QPainter, QTextCursor
 from PyQt6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -61,6 +61,7 @@ def _editor_cursor_global_pos(edit: TextEditor) -> QPoint:
     rect = edit.cursorRect(cursor)
     return edit.mapToGlobal(QPoint(rect.x(), rect.bottom() + _dp(4)))
 
+from ..icons import paint_rounded_surface
 from ..tag_dictionary import TagDictionary, TagInfo
 from ..theme import _fs, current_palette
 from ..ui_tokens import RAD_SM, RAD_XS, _dp, _rad
@@ -258,6 +259,10 @@ class TagCompleterPopup(QWidget):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent, Qt.WindowType.ToolTip | Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
+        # Corners are self-painted (antialiased) in paintEvent — QSS border-radius
+        # is not — so the surface must be translucent to let the rounded corners
+        # show through.
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.setObjectName("AcFrame")
 
@@ -338,10 +343,17 @@ class TagCompleterPopup(QWidget):
             TagCompleterPopup._active_popup = None
         super().hideEvent(event)
 
+    def paintEvent(self, event) -> None:
+        p = current_palette()
+        painter = QPainter(self)
+        paint_rounded_surface(
+            painter, self.rect(), _rad(RAD_SM),
+            bg=p['bg_menu'], border=p['line_strong'],
+        )
+
     def apply_theme(self) -> None:
         p = current_palette()
         self.setStyleSheet(
-            f"QWidget#AcFrame {{ background: {p['bg_menu']}; border: 1px solid {p['line_strong']}; border-radius: {_rad(RAD_SM)}px; }}"
             f"QFrame#AcDrop {{ background: {p['bg_menu']}; border: none; }}"
             f"QFrame#AcFooter {{ background: {p['bg_menu']}; border-top: 1px solid {p['line']}; }}"
             f"QLabel#AcSectionLabel {{ color: {p['text_label']}; font-size: {_fs('fs_8')}; letter-spacing: 1px; }}"
