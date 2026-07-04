@@ -9,7 +9,7 @@ from PyQt6.QtWidgets import QBoxLayout, QFrame, QMenu, QPushButton, QWidget
 from ..models import DockPosition, DockState
 from ..theme import current_palette
 from ..icons import paint_rounded_surface
-from .common import compute_resized_rect
+from .common import HoverPillButton, compute_resized_rect
 from .text_context_menu import apply_app_menu_style
 from ..ui_tokens import (
     DOCK_COLLAPSED_MAX_SIDE,
@@ -141,8 +141,9 @@ class DockPanel(QFrame):
         self.root_layout.setContentsMargins(_dp(6), _dp(8), _dp(6), _dp(8))
         self.root_layout.setSpacing(_dp(6))
 
-        self.toggle_button = QPushButton('‹', self)
+        self.toggle_button = HoverPillButton('‹', self)
         self.toggle_button.setObjectName('DockToggle')
+        self.toggle_button.set_pill_colors(normal=None, hover='hover_bg_strong')
         self.toggle_button.clicked.connect(self.toggle_expanded)
         self.root_layout.addWidget(self.toggle_button)
 

@@ -28,7 +28,7 @@ from ..ui_tokens import (
     CLS_IMAGE_SELECT_BUTTON,
     _dp,
 )
-from .common import DashedRectButton
+from .common import DashedRectButton, HoverPillButton
 from .text_context_menu import install_localized_context_menus
 
 
@@ -84,8 +84,9 @@ class ExampleWidget(QWidget):
         self.image_button.clicked.connect(self._select_image)
         top_row.addWidget(self.image_button)
 
-        self.delete_button = QPushButton("×", self)
+        self.delete_button = HoverPillButton("×", self)
         self.delete_button.setProperty("class", CLS_EXAMPLE_DELETE_BUTTON)
+        self.delete_button.set_pill_colors(normal=None, hover='delete_hover')
         self.delete_button.clicked.connect(lambda: self.delete_requested.emit(self))
         top_row.addWidget(self.delete_button, 0, Qt.AlignmentFlag.AlignTop)
 

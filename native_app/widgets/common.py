@@ -113,24 +113,32 @@ class HoverPillButton(QPushButton):
         self._pill_normal: str | None = None
         self._pill_hover: str | None = 'hover_bg_strong'
         self._pill_disabled: str | None = None
+        self._pill_active: str | None = None
         self._pill_border: str | None = None
         self._pill_border_hover: str | None = None
         self._pill_border_disabled: str | None = None
+        self._pill_border_active: str | None = None
 
     def set_pill_colors(self, *, normal: str | None = None,
                         hover: str | None = 'hover_bg_strong',
                         disabled: str | None = None,
+                        active: str | None = None,
                         border: str | None = None,
                         border_hover: str | None = None,
-                        border_disabled: str | None = None) -> None:
+                        border_disabled: str | None = None,
+                        border_active: str | None = None) -> None:
         """Pill fills/borders as palette KEYS (resolved at paint time so theme
-        swaps stay live). hover/disabled borders fall back to `border`."""
+        swaps stay live). The `active` fill is used when the button's
+        property('active') == 'true' (toolbar toggle state). Unset borders fall
+        back to `border`."""
         self._pill_normal = normal
         self._pill_hover = hover
         self._pill_disabled = disabled
+        self._pill_active = active
         self._pill_border = border
         self._pill_border_hover = border_hover or border
         self._pill_border_disabled = border_disabled or border
+        self._pill_border_active = border_active or border
         self.update()
 
     def enterEvent(self, event) -> None:
@@ -142,8 +150,11 @@ class HoverPillButton(QPushButton):
         super().leaveEvent(event)
 
     def paintEvent(self, event) -> None:
+        active = self.property('active')
         if not self.isEnabled():
             bg_key, border_key = self._pill_disabled, self._pill_border_disabled
+        elif self._pill_active is not None and (active is True or active == 'true'):
+            bg_key, border_key = self._pill_active, self._pill_border_active
         elif self.underMouse():
             bg_key, border_key = self._pill_hover, self._pill_border_hover
         else:
