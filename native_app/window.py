@@ -93,7 +93,7 @@ from .ui_tokens import (
     _dp,
     _rad,
 )
-from .widgets.common import RoundHandleSlider
+from .widgets.common import HoverPillButton, RoundHandleSlider
 from .widgets.dock import DockPanel
 from .widgets.example_widget import ExampleWidget
 from .widgets.floating_tray import FloatingTrayWidget
@@ -652,8 +652,14 @@ class MainWindow(QWidget):
         self._position_settings_overlay()
 
     def _create_title_button(self, text: str, slot, *, object_name: str = 'TitleBarButton') -> QPushButton:
-        button = QPushButton(text, self.title_bar)
+        # Hover/active pill is self-painted (antialiased); QSS keeps it
+        # transparent and only sets glyph colour + fixed size.
+        button = HoverPillButton(text, self.title_bar)
         button.setObjectName(object_name)
+        if object_name == 'CloseButton':
+            button.set_pill_colors(normal=None, hover='close_hover')
+        else:
+            button.set_pill_colors(normal=None, hover='hover_bg_strong', active='accent')
         button.clicked.connect(slot)
         return button
 

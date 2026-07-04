@@ -35,7 +35,7 @@ from ..ui_tokens import (
     CLS_PROMPT_TEXT,
     _dp,
 )
-from .common import DashedRectButton, DragHandleLabel, ToggleSwitch
+from .common import DashedRectButton, DragHandleLabel, HoverPillButton, ToggleSwitch
 from .text_context_menu import install_localized_context_menus
 
 
@@ -124,8 +124,9 @@ class PromptEntryWidget(QFrame):
         self.expand_indicator.setCursor(Qt.CursorShape.PointingHandCursor)
         header_layout.addWidget(self.expand_indicator)
 
-        self.delete_button = QPushButton("×", self.header)
+        self.delete_button = HoverPillButton("×", self.header)
         self.delete_button.setProperty("class", CLS_PROMPT_DELETE_BUTTON)
+        self.delete_button.set_pill_colors(normal=None, hover='delete_hover')
         self.delete_button.clicked.connect(lambda: self.delete_requested.emit(self))
         header_layout.addWidget(self.delete_button)
 

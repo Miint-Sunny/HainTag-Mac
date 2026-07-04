@@ -207,10 +207,11 @@ QPushButton[class="DockItemButton"],
     font-weight: 500;
 }}
 
+/* Titlebar button hover/active pills are self-painted (antialiased) in
+   HoverPillButton; QSS keeps them transparent and only sets glyph colour. */
 QPushButton#TitleBarButton {{
     background: transparent;
     border: none;
-    border-radius: {rad_sm};
     color: {text_dim};
     font-size: {fs_12};
     min-width: 26px;
@@ -220,17 +221,14 @@ QPushButton#TitleBarButton {{
 }}
 
 QPushButton#TitleBarButton:hover {{
-    background: {hover_bg_strong};
     color: {text_muted};
 }}
 
 QPushButton#TitleBarButton[active="true"] {{
-    background: {accent};
     color: {accent_text};
 }}
 
 QPushButton#CloseButton:hover {{
-    background: {close_hover};
     color: {selection_text};
 }}
 
@@ -242,9 +240,9 @@ QPushButton#CloseButton:hover {{
 }}
 
 QPushButton#DockToggle {{
+    /* Hover pill self-painted (antialiased) in HoverPillButton. */
     background: transparent;
     border: none;
-    border-radius: {rad_sm};
     color: {text_dim};
     font-size: {fs_12};
     min-width: 20px;
@@ -253,7 +251,10 @@ QPushButton#DockToggle {{
     max-height: 20px;
 }}
 
-QPushButton#DockToggle:hover,
+QPushButton#DockToggle:hover {{
+    color: {text_muted};
+}}
+
 QPushButton[class="DockItemButton"]:hover {{
     background: {hover_bg_strong};
     color: {text_muted};
@@ -562,9 +563,9 @@ QWidget[class="ExampleFrame"]:hover {{
 
 QPushButton[class="PromptDeleteButton"],
 QPushButton[class="ExampleDeleteButton"] {{
+    /* Hover pill self-painted (antialiased) in HoverPillButton. */
     background: transparent;
     border: none;
-    border-radius: {rad_sm};
     color: {text_dim};
 }}
 
@@ -585,7 +586,6 @@ QPushButton[class="ExampleDeleteButton"] {{
 
 QPushButton[class="PromptDeleteButton"]:hover,
 QPushButton[class="ExampleDeleteButton"]:hover {{
-    background: {delete_hover};
     color: white;
 }}
 
