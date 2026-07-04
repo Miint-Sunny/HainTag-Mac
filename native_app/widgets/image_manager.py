@@ -49,7 +49,7 @@ from ..i18n import Translator
 from ..metadata import MetadataReader, MetadataWriter, ImageMetadata
 from ..metadata.thumb_cache import ThumbCache
 from ..theme import _fs, current_palette, is_theme_light
-from ..icons import pin_icon
+from ..icons import pin_icon, paint_rounded_surface, to_qcolor
 from ..ui_tokens import CLS_METADATA_TEXT, RAD_MD, RAD_SM, RAD_XS, _dp, _rad
 from .collapsible_section import CollapsibleSection
 from .text_context_menu import apply_app_menu_style, install_localized_context_menus
@@ -121,10 +121,30 @@ def _p() -> dict[str, str]:
 def _set_pin_icon(btn, size_px: int, *, pinned: bool) -> None:
     """Give a pin button the flat push-pin glyph in the current palette colour."""
     p = _p()
-    color = p['accent_text'] if pinned else p['text_dim']
+    color = p['accent_text'] if pinned else p['text_muted']
     btn.setText('')
     btn.setIcon(pin_icon(size_px, color, pinned=pinned))
     btn.setIconSize(QSize(size_px, size_px))
+
+
+class _RoundedSurface(QWidget):
+    """A container whose rounded body + border is painted (antialiased) rather
+    than drawn by QSS, which rasterises corners poorly. The widget is translucent
+    so the rounded corners show the parent; sub-control QSS still applies to
+    children via the object-name rules set on this widget."""
+
+    def __init__(self, radius: float, bg_key: str, border_key: str, parent=None):
+        super().__init__(parent)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        self._radius = radius
+        self._bg_key = bg_key
+        self._border_key = border_key
+
+    def paintEvent(self, event):
+        p = current_palette()
+        painter = QPainter(self)
+        paint_rounded_surface(painter, self.rect(), self._radius,
+                              bg=p[self._bg_key], border=p[self._border_key])
 
 
 class _StyledDialog(QWidget):
@@ -144,13 +164,8 @@ class _StyledDialog(QWidget):
         self._translator = getattr(parent, "_t", None) or getattr(parent, "_translator", None)
         p = _p()
 
-        surface = QWidget(self)
+        surface = _RoundedSurface(float(_rad(RAD_SM)), 'bg', 'line_strong', self)
         surface.setStyleSheet(f"""
-            QWidget#DialogSurface {{
-                background: {p['bg']};
-                border: 1px solid {p['line_strong']};
-                border-radius: {_rad(RAD_SM)}px;
-            }}
             QLabel {{ color: {p['text']}; background: transparent; }}
             QLineEdit {{
                 background: {p['bg_content']};
@@ -315,12 +330,7 @@ def _clamp_to_screen(pos: QPoint, size: QSize, margin: int = 4) -> QPoint:
 def _im_qss(p: dict[str, str]) -> str:
     """Generate a self-contained QSS for the image manager window."""
     return f"""
-    /* ── Surface ── */
-    #ImSurface {{
-        background: {p['bg']};
-        border: 1px solid {p['line_strong']};
-        border-radius: {_rad(RAD_MD)}px;
-    }}
+    /* ── Surface ── (rounded body/border painted in _RoundedSurface.paintEvent) */
 
     /* ── Title bar ── */
     #ImTitleBar {{
@@ -618,12 +628,12 @@ class ThumbnailDelegate(QStyledItemDelegate):
 
         # Hover / Selection — subtle rounded rect
         if option.state & QStyle.StateFlag.State_Selected:
-            painter.setPen(QPen(QColor(p['accent_text']), 1))
-            painter.setBrush(QColor(p['accent']))
+            painter.setPen(QPen(to_qcolor(p['accent_text']), 1))
+            painter.setBrush(to_qcolor(p['accent']))
             painter.drawRoundedRect(r.adjusted(2, 2, -2, -2), _rad(RAD_SM), _rad(RAD_SM))
         elif option.state & QStyle.StateFlag.State_MouseOver:
             painter.setPen(Qt.PenStyle.NoPen)
-            painter.setBrush(QColor(p['hover_bg']))
+            painter.setBrush(to_qcolor(p['hover_bg']))
             painter.drawRoundedRect(r.adjusted(2, 2, -2, -2), _rad(RAD_SM), _rad(RAD_SM))
 
         tr = r.adjusted(6, 6, -6, -22)
@@ -633,8 +643,8 @@ class ThumbnailDelegate(QStyledItemDelegate):
             cx, cy = tr.center().x(), tr.center().y()
             fw, fh = min(tr.width(), 60), min(tr.height(), 48)
             fx, fy = cx - fw // 2, cy - fh // 2
-            painter.setPen(QPen(QColor(p['text_dim']), 1.5))
-            painter.setBrush(QColor(p['hover_bg']))
+            painter.setPen(QPen(to_qcolor(p['text_dim']), 1.5))
+            painter.setBrush(to_qcolor(p['hover_bg']))
             # Tab
             painter.drawRoundedRect(fx, fy, fw // 3, fh // 6, 2, 2)
             # Body
@@ -661,7 +671,7 @@ class ThumbnailDelegate(QStyledItemDelegate):
                 if path in self._cut:
                     painter.setOpacity(1.0)
             elif path:
-                painter.setPen(QPen(QColor(p['line_strong']), 1, Qt.PenStyle.DotLine))
+                painter.setPen(QPen(to_qcolor(p['line_strong']), 1, Qt.PenStyle.DotLine))
                 painter.setBrush(Qt.BrushStyle.NoBrush)
                 painter.drawRoundedRect(tr.adjusted(8, 8, -8, -8), _rad(RAD_SM), _rad(RAD_SM))
 
@@ -729,7 +739,7 @@ class LightboxOverlay(QWidget):
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         pal = _p()
         # Deep backdrop
-        backdrop = QColor(pal.get('bg_backdrop', pal['bg']))
+        backdrop = to_qcolor(pal.get('bg_backdrop', pal['bg']))
         backdrop.setAlpha(230 if not is_theme_light() else 218)
         painter.fillRect(self.rect(), backdrop)
         if self._pm and not self._pm.isNull():
@@ -963,7 +973,7 @@ class DetailPanel(QWidget):
         bg.setAlpha(240)
         p.fillPath(path, bg)
         # Subtle border
-        p.setPen(QPen(QColor(pal['line_strong']), 0.5))
+        p.setPen(QPen(to_qcolor(pal['line_strong']), 0.5))
         p.drawPath(path)
         p.end()
 
@@ -1184,8 +1194,9 @@ class ImageManagerWindow(QWidget):
         p = _p()
         self.setStyleSheet(_im_qss(p))
 
-        # Surface
-        self._surface = QWidget(self)
+        # Surface — rounded body/border is self-painted (see _RoundedSurface);
+        # QSS only styles the sub-controls below.
+        self._surface = _RoundedSurface(float(_rad(RAD_MD)), 'bg', 'line_strong', self)
         self._surface.setObjectName("ImSurface")
         outer = QVBoxLayout(self)
         outer.setContentsMargins(_dp(4), _dp(4), _dp(4), _dp(4))
@@ -1514,7 +1525,7 @@ class ImageManagerWindow(QWidget):
     def paintEvent(self, event):
         super().paintEvent(event)
         painter = QPainter(self)
-        line = QColor(_p()['line'])
+        line = to_qcolor(_p()['line'])
         line.setAlpha(90)
         painter.setPen(QPen(line, max(1, _dp(1))))
         painter.drawRect(self.rect().adjusted(0, 0, -1, -1))

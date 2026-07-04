@@ -3,10 +3,12 @@ from __future__ import annotations
 from typing import Callable
 
 from PyQt6.QtCore import QEvent, QPoint, QRect, Qt, pyqtSignal
-from PyQt6.QtGui import QMouseEvent
+from PyQt6.QtGui import QMouseEvent, QPainter
 from PyQt6.QtWidgets import QBoxLayout, QFrame, QMenu, QPushButton, QWidget
 
 from ..models import DockPosition, DockState
+from ..theme import current_palette
+from ..icons import paint_rounded_surface
 from .common import compute_resized_rect
 from .text_context_menu import apply_app_menu_style
 from ..ui_tokens import (
@@ -30,6 +32,8 @@ from ..ui_tokens import (
     DOCK_FLOAT_WIDTH,
     CLS_DOCK_ITEM_BUTTON,
     _dp,
+    _rad,
+    RAD_MD,
 )
 
 
@@ -110,7 +114,7 @@ class DockPanel(QFrame):
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self.setObjectName('DockPanel')
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.setMouseTracking(True)
         self._state = DockState(
             expanded=True,
@@ -190,6 +194,12 @@ class DockPanel(QFrame):
         for button in self._items.values():
             button.set_close_label(label)
 
+    def paintEvent(self, event) -> None:
+        p = current_palette()
+        painter = QPainter(self)
+        paint_rounded_surface(painter, self.rect(), float(_rad(RAD_MD)),
+                              bg=p['bg_dock'], border=p['line'])
+
     def apply_theme(self) -> None:
         for widget in [self, self.toggle_button, self.items_container, self.edge_handle, self.corner_handle]:
             self.style().unpolish(widget)
@@ -200,6 +210,7 @@ class DockPanel(QFrame):
         for button in self._items.values():
             self.style().unpolish(button)
             self.style().polish(button)
+        self.update()  # repaint self-drawn surface with new palette
 
     def set_container_rect_provider(self, provider: Callable[[], QRect]) -> None:
         self._container_rect_provider = provider
