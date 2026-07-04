@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from PyQt6.QtCore import QPoint, QRect, Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QMouseEvent, QPainter
-from PyQt6.QtWidgets import QCheckBox, QLabel
+from PyQt6.QtWidgets import QCheckBox, QLabel, QPushButton
 
-from ..theme import is_theme_light
-from ..ui_tokens import _dp
+from ..icons import paint_rounded_surface
+from ..theme import current_palette, is_theme_light
+from ..ui_tokens import RAD_SM, _dp, _rad
 
 
 def compute_resized_rect(
@@ -89,6 +90,153 @@ class ToggleSwitch(QCheckBox):
 
     def hitButton(self, pos) -> bool:
         return self.rect().contains(pos)
+
+
+class HoverPillButton(QPushButton):
+    """Titlebar-style pill button (grip ⠿ / pin / × / resize ◢): the pill
+    background is painted here with QPainter antialiasing — QSS border-radius
+    corners are not antialiased. QSS for these buttons must keep
+    `background: transparent`; the style pass then draws only text/icon on top
+    of the self-painted pill."""
+
+    def __init__(self, text: str = "", parent=None, *, radius_token: int = RAD_SM) -> None:
+        super().__init__(text, parent)
+        self._radius_token = radius_token
+        self._pill_normal: str | None = None
+        self._pill_hover: str | None = 'hover_bg_strong'
+        self._pill_disabled: str | None = None
+        self._pill_border: str | None = None
+        self._pill_border_hover: str | None = None
+        self._pill_border_disabled: str | None = None
+
+    def set_pill_colors(self, *, normal: str | None = None,
+                        hover: str | None = 'hover_bg_strong',
+                        disabled: str | None = None,
+                        border: str | None = None,
+                        border_hover: str | None = None,
+                        border_disabled: str | None = None) -> None:
+        """Pill fills/borders as palette KEYS (resolved at paint time so theme
+        swaps stay live). hover/disabled borders fall back to `border`."""
+        self._pill_normal = normal
+        self._pill_hover = hover
+        self._pill_disabled = disabled
+        self._pill_border = border
+        self._pill_border_hover = border_hover or border
+        self._pill_border_disabled = border_disabled or border
+        self.update()
+
+    def enterEvent(self, event) -> None:
+        self.update()
+        super().enterEvent(event)
+
+    def leaveEvent(self, event) -> None:
+        self.update()
+        super().leaveEvent(event)
+
+    def paintEvent(self, event) -> None:
+        if not self.isEnabled():
+            bg_key, border_key = self._pill_disabled, self._pill_border_disabled
+        elif self.underMouse():
+            bg_key, border_key = self._pill_hover, self._pill_border_hover
+        else:
+            bg_key, border_key = self._pill_normal, self._pill_border
+        if bg_key or border_key:
+            pal = current_palette()
+            painter = QPainter(self)
+            paint_rounded_surface(painter, self.rect(), _rad(self._radius_token),
+                                  bg=pal[bg_key] if bg_key else None,
+                                  border=pal[border_key] if border_key else None)
+            painter.end()
+        super().paintEvent(event)
+
+
+class DashedCircleButton(QPushButton):
+    """Small circular “add” chip with an antialiased dashed outline — a QSS
+    `border: dashed` + full border-radius circle rasterises with heavy
+    stair-stepping. QSS keeps `background: transparent; border: none` and only
+    styles the glyph colour."""
+
+    def __init__(self, text: str = "+", parent=None) -> None:
+        super().__init__(text, parent)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+
+    def enterEvent(self, event) -> None:
+        self.update()
+        super().enterEvent(event)
+
+    def leaveEvent(self, event) -> None:
+        self.update()
+        super().leaveEvent(event)
+
+    def paintEvent(self, event) -> None:
+        pal = current_palette()
+        hovered = self.isEnabled() and self.underMouse()
+        painter = QPainter(self)
+        paint_rounded_surface(
+            painter, self.rect(), (min(self.width(), self.height()) - 1) / 2.0,
+            bg=pal['accent_sub'] if hovered else None,
+            border=pal['accent_hover'] if hovered else pal['line_strong'],
+            dashed=True,
+        )
+        painter.end()
+        super().paintEvent(event)
+
+
+class DashedRectButton(QPushButton):
+    """Rounded-rect button with an antialiased dashed outline — the shared
+    replacement for every QSS `border: 1px dashed …; border-radius: …` control
+    (ghost/add buttons, image-select drop pads). Qt's stylesheet engine draws
+    those dashed rounded corners with heavy stair-stepping. The fill/border are
+    self-painted here; QSS on the widget must keep `background: transparent;
+    border: none` and only set glyph colour/padding. Fills/borders are palette
+    KEYS resolved at paint time (theme swaps stay live)."""
+
+    def __init__(self, text: str = "", parent=None, *, radius_token: int = RAD_SM,
+                 border: str = 'line', border_hover: str = 'line_strong',
+                 bg: str | None = None, bg_hover: str | None = None,
+                 border_w: float = 1.0) -> None:
+        super().__init__(text, parent)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._radius_token = radius_token
+        self._border = border
+        self._border_hover = border_hover
+        self._bg = bg
+        self._bg_hover = bg_hover
+        self._border_w = border_w
+
+    def set_dashed_colors(self, *, border: str | None = None,
+                          border_hover: str | None = None,
+                          bg: str | None = None, bg_hover: str | None = None) -> None:
+        if border is not None:
+            self._border = border
+        if border_hover is not None:
+            self._border_hover = border_hover
+        self._bg = bg
+        self._bg_hover = bg_hover
+        self.update()
+
+    def enterEvent(self, event) -> None:
+        self.update()
+        super().enterEvent(event)
+
+    def leaveEvent(self, event) -> None:
+        self.update()
+        super().leaveEvent(event)
+
+    def paintEvent(self, event) -> None:
+        pal = current_palette()
+        hovered = self.isEnabled() and self.underMouse()
+        bg_key = (self._bg_hover if hovered else self._bg) or self._bg
+        border_key = self._border_hover if hovered else self._border
+        painter = QPainter(self)
+        paint_rounded_surface(
+            painter, self.rect(), _rad(self._radius_token),
+            bg=pal[bg_key] if bg_key else None,
+            border=pal[border_key],
+            border_w=self._border_w, dashed=True,
+        )
+        painter.end()
+        super().paintEvent(event)
 
 
 class DragHandleLabel(QLabel):
