@@ -36,7 +36,6 @@ from PyQt6.QtWidgets import (
     QMenu,
     QPushButton,
     QScrollArea,
-    QSlider,
     QSpinBox,
     QStyle,
     QStyledItemDelegate,

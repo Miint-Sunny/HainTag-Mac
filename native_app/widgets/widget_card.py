@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from PyQt6.QtCore import QEvent, QPoint, QRect, QRectF, QSize, Qt, pyqtSignal
-from PyQt6.QtGui import QColor, QPainter, QPen
+from PyQt6.QtGui import QPainter, QPen
 from PyQt6.QtWidgets import QFrame, QVBoxLayout, QWidget
 
 from ..theme import _fs, current_palette

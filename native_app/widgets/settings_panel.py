@@ -45,7 +45,6 @@ from ..ui_tokens import (
     CLS_SLIDER_VALUE,
     CLS_SUMMARY_TEXT,
     RAD_MD,
-    RAD_SM,
     SETTINGS_WIDTH,
     _dp,
     _rad,
