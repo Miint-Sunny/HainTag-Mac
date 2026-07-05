@@ -85,21 +85,32 @@ def pin_icon(size_px: int, color: str, *, pinned: bool) -> QIcon:
 # ── Antialiased rounded surfaces (replace QSS border-radius, which Qt's
 # stylesheet engine rasterises with poor corner antialiasing) ──
 
-def rounded_rect_path(rect, radius: float, *, top_only: bool = False) -> QPainterPath:
-    """A rounded-rect path. top_only rounds just the two TOP corners (for a
-    header strip sitting inside a rounded card)."""
+def rounded_rect_path(rect, radius: float, *, top_only: bool = False,
+                      bottom_only: bool = False) -> QPainterPath:
+    """A rounded-rect path. top_only/bottom_only round just that PAIR of
+    corners (for a header strip / footer area sitting inside a rounded
+    container)."""
     path = QPainterPath()
     r = max(0.0, float(radius))
-    if not top_only or r == 0.0:
+    if (not top_only and not bottom_only) or r == 0.0:
         path.addRoundedRect(rect, r, r)
         return path
     x, y, w, h = rect.x(), rect.y(), rect.width(), rect.height()
-    path.moveTo(x, y + h)
-    path.lineTo(x, y + r)
-    path.arcTo(x, y, 2 * r, 2 * r, 180.0, -90.0)
-    path.lineTo(x + w - r, y)
-    path.arcTo(x + w - 2 * r, y, 2 * r, 2 * r, 90.0, -90.0)
-    path.lineTo(x + w, y + h)
+    if top_only:
+        path.moveTo(x, y + h)
+        path.lineTo(x, y + r)
+        path.arcTo(x, y, 2 * r, 2 * r, 180.0, -90.0)
+        path.lineTo(x + w - r, y)
+        path.arcTo(x + w - 2 * r, y, 2 * r, 2 * r, 90.0, -90.0)
+        path.lineTo(x + w, y + h)
+        path.closeSubpath()
+        return path
+    path.moveTo(x, y)
+    path.lineTo(x, y + h - r)
+    path.arcTo(x, y + h - 2 * r, 2 * r, 2 * r, 180.0, 90.0)
+    path.lineTo(x + w - r, y + h)
+    path.arcTo(x + w - 2 * r, y + h - 2 * r, 2 * r, 2 * r, 270.0, 90.0)
+    path.lineTo(x + w, y)
     path.closeSubpath()
     return path
 

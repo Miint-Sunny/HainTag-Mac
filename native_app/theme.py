@@ -127,16 +127,16 @@ QWidget {{
     background: transparent;
 }}
 
+/* Shell surfaces (window body, title bar, content area) self-paint their
+   fills and rounded corners with antialiasing — QSS border-radius corners
+   are not antialiased. See WindowSurface/_TitleBarSurface/_ContentHostSurface. */
 #WindowSurface {{
-    background: {bg};
-    border: 1px solid {line};
-    border-radius: {rad_md};
+    background: transparent;
+    border: none;
 }}
 
 #ContentHost {{
-    background: {bg_content};
-    border-bottom-left-radius: {rad_md};
-    border-bottom-right-radius: {rad_md};
+    background: transparent;
 }}
 
 #Workspace {{
@@ -192,9 +192,7 @@ QWidget {{
 }}
 
 #TitleBar {{
-    background: {bg_titlebar};
-    border-top-left-radius: {rad_md};
-    border-top-right-radius: {rad_md};
+    background: transparent;
     border-bottom: 1px solid {line};
 }}
 
