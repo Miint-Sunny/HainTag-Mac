@@ -161,13 +161,22 @@ def show_error_report_dialog(report: ErrorReport, *, translator=None, parent: QW
     box_parent = parent if isinstance(parent, QWidget) and parent is not None else None
     box = QMessageBox(box_parent)
     try:
+        from .qss_surfaces import surface_decl
         from .theme import current_palette
         p = current_palette()
+        # Buttons: AA 9-patch surface replaces the QSS bg/border/radius trio
+        # (Qt rasterises QSS corners without antialiasing); the :hover rule
+        # swaps in the accent-bordered render. Its border-width is radius+1
+        # and eats the content box, so padding compensates: new = old padding
+        # + old 1px border - (radius+1), floored at 0. The QMessageBox itself
+        # has a system title bar — no radius to migrate.
+        r = _rad(RAD_SM)
+        s = r + 1
         box.setStyleSheet(f"""
             QMessageBox {{ background: {p['bg']}; color: {p['text']}; }}
             QLabel {{ color: {p['text']}; background: transparent; }}
-            QPushButton {{ background: {p['bg_surface']}; color: {p['text']}; border: 1px solid {p['line']}; border-radius: {_rad(RAD_SM)}px; padding: 4px 12px; }}
-            QPushButton:hover {{ border-color: {p['accent_text']}; }}
+            QPushButton {{ {surface_decl(r, p['bg_surface'], p['line'])} color: {p['text']}; padding: {max(0, 4 + 1 - s)}px {max(0, 12 + 1 - s)}px; }}
+            QPushButton:hover {{ {surface_decl(r, p['bg_surface'], p['accent_text'])} }}
             QTextEdit {{ background: {p['bg_content']}; color: {p['text_muted']}; border: 1px solid {p['line']}; }}
         """)
     except Exception:

@@ -18,14 +18,15 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QProgressBar,
-    QPushButton,
     QTextEdit,
     QVBoxLayout,
     QWidget,
 )
 
+from .qss_surfaces import surface_decl
 from .theme import _fs, current_palette
 from .ui_tokens import RAD_SM, _dp, _rad
+from .widgets.common import HoverPillButton
 from .widgets.text_context_menu import install_localized_context_menus
 
 _GITHUB_API = "https://api.github.com/repos/1756141021/HainTag/releases/latest"
@@ -416,6 +417,27 @@ def _generate_update_script(source_dir: str,
     return path
 
 
+def _outline_pill_button(label: str, parent, *, dim: bool = False) -> HoverPillButton:
+    """Bordered text button with a self-painted antialiased pill.
+
+    Replaces the QSS background/border/border-radius trio (Qt rasterises QSS
+    corners without antialiasing). The pill border is a palette KEY resolved
+    at paint time; hover repeats the normal state (these buttons had no hover
+    rule). QSS keeps only text colour/padding — the dropped 1px QSS border is
+    folded into the padding so the total box is unchanged.
+    """
+    p = current_palette()
+    btn = HoverPillButton(label, parent)
+    btn.setCursor(Qt.CursorShape.PointingHandCursor)
+    btn.set_pill_colors(normal=None, hover=None, border='line')
+    btn.setStyleSheet(
+        f"color: {p['text_dim'] if dim else p['text']}; background: transparent; "
+        f"border: none; padding: {_dp(6) + 1}px {_dp(16) + 1}px; "
+        f"font-size: {_fs('fs_10')};"
+    )
+    return btn
+
+
 class UpdateDialog(QDialog):
     """Dialog showing available update with changelog."""
 
@@ -456,10 +478,16 @@ class UpdateDialog(QDialog):
             cl_edit.setPlainText(changelog)
             cl_edit.setReadOnly(True)
             cl_edit.setMaximumHeight(_dp(250))
+            # AA 9-patch surface replaces the QSS bg/border/radius trio
+            # (aliased corners). Its border-width is radius+1 and eats the
+            # content box, so padding compensates: new = old _dp(8) padding +
+            # old 1px border - (radius+1), floored at 0. QTextEdit-scoped so
+            # the editor's scrollbars keep their global styling.
+            r = _rad(RAD_SM)
             cl_edit.setStyleSheet(
-                f"background: {p['bg_input']}; color: {p['text']}; "
-                f"border: 1px solid {p['line']}; border-radius: {_rad(RAD_SM)}px; "
-                f"font-size: {_fs('fs_10')}; padding: {_dp(8)}px;"
+                f"QTextEdit {{ color: {p['text']}; font-size: {_fs('fs_10')}; "
+                f"{surface_decl(r, p['bg_input'], p['line'])} "
+                f"padding: {max(0, _dp(8) + 1 - (r + 1))}px; }}"
             )
             layout.addWidget(cl_edit)
 
@@ -470,31 +498,21 @@ class UpdateDialog(QDialog):
         btn_row.setSpacing(_dp(10))
         btn_row.addStretch()
 
-        skip_btn = QPushButton(translator.t("update_skip"), self)
-        skip_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        skip_btn.setStyleSheet(
-            f"color: {p['text_dim']}; background: transparent; "
-            f"border: 1px solid {p['line']}; border-radius: {_rad(RAD_SM)}px; "
-            f"padding: {_dp(6)}px {_dp(16)}px; font-size: {_fs('fs_10')};"
-        )
+        skip_btn = _outline_pill_button(translator.t("update_skip"), self, dim=True)
         skip_btn.clicked.connect(self._on_skip)
         btn_row.addWidget(skip_btn)
 
-        later_btn = QPushButton(translator.t("update_later"), self)
-        later_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        later_btn.setStyleSheet(
-            f"color: {p['text']}; background: transparent; "
-            f"border: 1px solid {p['line']}; border-radius: {_rad(RAD_SM)}px; "
-            f"padding: {_dp(6)}px {_dp(16)}px; font-size: {_fs('fs_10')};"
-        )
+        later_btn = _outline_pill_button(translator.t("update_later"), self)
         later_btn.clicked.connect(self._on_later)
         btn_row.addWidget(later_btn)
 
-        update_btn = QPushButton(translator.t("update_now"), self)
+        # Accent pill self-painted with AA (palette keys, live on theme swap);
+        # QSS keeps only text/padding. Border was already none — padding stays.
+        update_btn = HoverPillButton(translator.t("update_now"), self)
         update_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        update_btn.set_pill_colors(normal='accent', hover='accent_hover')
         update_btn.setStyleSheet(
-            f"color: {p['accent_text']}; background: {p['accent']}; "
-            f"border: none; border-radius: {_rad(RAD_SM)}px; "
+            f"color: {p['accent_text']}; background: transparent; border: none; "
             f"padding: {_dp(6)}px {_dp(20)}px; font-size: {_fs('fs_11')}; font-weight: bold;"
         )
         update_btn.clicked.connect(self._on_update)
@@ -515,6 +533,9 @@ class UpdateDialog(QDialog):
         self._progress_bar.setRange(0, 100)
         self._progress_bar.setTextVisible(False)
         self._progress_bar.setFixedHeight(_dp(6))
+        # QSS radius kept intentionally: ~3px corners on a 6px-high bar show no
+        # visible aliasing, and the 9-patch slice (radius+1) must not exceed
+        # half the control height — a 6px bar is below that threshold.
         self._progress_bar.setStyleSheet(
             f"QProgressBar {{ background: {p['bg_input']}; border: none; border-radius: {_dp(3)}px; }} "
             f"QProgressBar::chunk {{ background: {p['accent']}; border-radius: {_dp(3)}px; }}"
@@ -522,13 +543,8 @@ class UpdateDialog(QDialog):
         self._progress_bar.hide()
         layout.addWidget(self._progress_bar)
 
-        self._cancel_btn = QPushButton(translator.t("update_download_cancel"), self)
-        self._cancel_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._cancel_btn.setStyleSheet(
-            f"color: {p['text']}; background: transparent; "
-            f"border: 1px solid {p['line']}; border-radius: {_rad(RAD_SM)}px; "
-            f"padding: {_dp(6)}px {_dp(16)}px; font-size: {_fs('fs_10')};"
-        )
+        self._cancel_btn = _outline_pill_button(
+            translator.t("update_download_cancel"), self)
         self._cancel_btn.clicked.connect(self._on_cancel)
         self._cancel_btn.hide()
         layout.addWidget(self._cancel_btn, alignment=Qt.AlignmentFlag.AlignRight)
@@ -586,14 +602,7 @@ class UpdateDialog(QDialog):
         self._progress_label.setText(
             f"{self._t.t('update_download_failed')}: {message}"
         )
-        p = current_palette()
-        close_btn = QPushButton(self._t.t("update_later"), self)
-        close_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        close_btn.setStyleSheet(
-            f"color: {p['text']}; background: transparent; "
-            f"border: 1px solid {p['line']}; border-radius: {_rad(RAD_SM)}px; "
-            f"padding: {_dp(6)}px {_dp(16)}px; font-size: {_fs('fs_10')};"
-        )
+        close_btn = _outline_pill_button(self._t.t("update_later"), self)
         close_btn.clicked.connect(self.reject)
         self.layout().addWidget(close_btn, alignment=Qt.AlignmentFlag.AlignRight)
 
@@ -633,11 +642,14 @@ class NoUpdateDialog(QDialog):
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(label)
 
-        ok_btn = QPushButton(translator.t("ok"), self)
+        # Accent pill self-painted with AA (same style as UpdateDialog's
+        # update button); border was already none — padding stays.
+        ok_btn = HoverPillButton(translator.t("ok"), self)
         ok_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        ok_btn.set_pill_colors(normal='accent', hover='accent_hover')
         ok_btn.setStyleSheet(
-            f"color: {p['text']}; background: {p['accent']}; "
-            f"border: none; border-radius: {_rad(RAD_SM)}px; padding: {_dp(6)}px {_dp(20)}px; font-size: {_fs('fs_10')};"
+            f"color: {p['text']}; background: transparent; border: none; "
+            f"padding: {_dp(6)}px {_dp(20)}px; font-size: {_fs('fs_10')};"
         )
         ok_btn.clicked.connect(self.accept)
         layout.addWidget(ok_btn, alignment=Qt.AlignmentFlag.AlignCenter)

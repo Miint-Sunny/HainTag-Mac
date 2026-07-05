@@ -8,14 +8,15 @@ from PyQt6.QtWidgets import (
     QLabel,
     QLineEdit,
     QListWidget,
-    QPushButton,
     QTextEdit,
     QVBoxLayout,
 )
 
 from ..i18n import Translator
+from ..qss_surfaces import surface_decl
 from ..theme import _fs, current_palette
 from ..ui_tokens import RAD_SM, _dp, _rad
+from .common import HoverPillButton
 from .text_context_menu import install_localized_context_menus
 
 
@@ -32,7 +33,15 @@ class DestroyTemplateEditor(QDialog):
         p = current_palette()
         self.setWindowTitle(translator.t("metadata_edit_preset"))
         self.setMinimumSize(_dp(500), _dp(400))
+        # System-titlebar QDialog: no radius on the dialog itself. Inner
+        # controls below use AA 9-patch surfaces / self-painted pills instead
+        # of QSS border-radius (Qt rasterises those corners without
+        # antialiasing). The 9-patch border-width is radius+1 (s) and eats the
+        # content box, so paddings compensate: new = old padding + old border
+        # - s, floored at 0.
         self.setStyleSheet(f"background: {p['bg']}; color: {p['text']};")
+        r = _rad(RAD_SM)
+        s = r + 1
 
         root = QHBoxLayout(self)
         root.setSpacing(_dp(12))
@@ -48,33 +57,44 @@ class DestroyTemplateEditor(QDialog):
         left_header.addWidget(left_label)
         left_header.addStretch()
 
-        add_btn = QPushButton("+", self)
+        # Accent pill self-painted with AA (palette keys, live on theme swap);
+        # QSS keeps only glyph colour/font. Border was already none.
+        add_btn = HoverPillButton("+", self)
         add_btn.setFixedSize(_dp(24), _dp(24))
         add_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        add_btn.set_pill_colors(normal='accent', hover='accent_hover')
         add_btn.setStyleSheet(
-            f"background: {p['accent']}; color: {p['accent_text']}; "
-            f"border: none; border-radius: {_rad(RAD_SM)}px; font-size: {_fs('fs_12')}; font-weight: bold;"
+            f"color: {p['accent_text']}; background: transparent; border: none; "
+            f"font-size: {_fs('fs_12')}; font-weight: bold;"
         )
         add_btn.clicked.connect(self._add_template)
         left_header.addWidget(add_btn)
 
         left.addLayout(left_header)
 
+        # List body + item highlight as AA 9-patch surfaces (same pattern as
+        # theme.control_surfaces_qss QMenu::item): the normal item carries a
+        # transparent surface so its border-width matches the selected state
+        # and the text doesn't shift on selection.
         self._list = QListWidget(self)
         self._list.setStyleSheet(
-            f"QListWidget {{ background: {p['bg_input']}; border: 1px solid {p['line']}; "
-            f"border-radius: {_rad(RAD_SM)}px; font-size: {_fs('fs_10')}; }}"
-            f"QListWidget::item {{ padding: 6px 8px; }}"
-            f"QListWidget::item:selected {{ background: {p['accent']}; color: {p['accent_text']}; }}"
+            f"QListWidget {{ {surface_decl(r, p['bg_input'], p['line'])} "
+            f"font-size: {_fs('fs_10')}; padding: {max(0, 1 - s)}px; }}"
+            f"QListWidget::item {{ {surface_decl(r, 'rgba(0, 0, 0, 0)')} "
+            f"padding: {max(0, 6 - s)}px {max(0, 8 - s)}px; }}"
+            f"QListWidget::item:selected {{ {surface_decl(r, p['accent'])} "
+            f"color: {p['accent_text']}; }}"
         )
         self._list.currentRowChanged.connect(self._on_select)
         left.addWidget(self._list, 1)
 
-        del_btn = QPushButton(translator.t("delete"), self)
+        # Static fill: hover repeats the normal key (no hover rule existed).
+        del_btn = HoverPillButton(translator.t("delete"), self)
         del_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        del_btn.set_pill_colors(normal='delete_hover', hover='delete_hover')
         del_btn.setStyleSheet(
-            f"background: {p['delete_hover']}; color: {p['text']}; "
-            f"border: none; border-radius: {_rad(RAD_SM)}px; padding: 4px 12px; font-size: {_fs('fs_10')};"
+            f"color: {p['text']}; background: transparent; border: none; "
+            f"padding: 4px 12px; font-size: {_fs('fs_10')};"
         )
         del_btn.clicked.connect(self._delete_template)
         left.addWidget(del_btn)
@@ -91,9 +111,9 @@ class DestroyTemplateEditor(QDialog):
 
         self._name_edit = QLineEdit(self)
         self._name_edit.setStyleSheet(
-            f"background: {p['bg_input']}; color: {p['text']}; "
-            f"border: 1px solid {p['line']}; border-radius: {_rad(RAD_SM)}px; "
-            f"padding: 4px 8px; font-size: {_fs('fs_11')};"
+            f"QLineEdit {{ {surface_decl(r, p['bg_input'], p['line'])} "
+            f"color: {p['text']}; padding: {max(0, 4 + 1 - s)}px {max(0, 8 + 1 - s)}px; "
+            f"font-size: {_fs('fs_11')}; }}"
         )
         self._name_edit.textChanged.connect(self._on_name_changed)
         right.addWidget(self._name_edit)
@@ -102,11 +122,12 @@ class DestroyTemplateEditor(QDialog):
         text_label.setStyleSheet(f"font-size: {_fs('fs_10')}; color: {p['text_dim']};")
         right.addWidget(text_label)
 
+        # QTextEdit-scoped so the editor's scrollbars keep global styling.
         self._text_edit = QTextEdit(self)
         self._text_edit.setStyleSheet(
-            f"background: {p['bg_input']}; color: {p['text']}; "
-            f"border: 1px solid {p['line']}; border-radius: {_rad(RAD_SM)}px; "
-            f"padding: 6px 8px; font-size: {_fs('fs_10')};"
+            f"QTextEdit {{ {surface_decl(r, p['bg_input'], p['line'])} "
+            f"color: {p['text']}; padding: {max(0, 6 + 1 - s)}px {max(0, 8 + 1 - s)}px; "
+            f"font-size: {_fs('fs_10')}; }}"
         )
         self._text_edit.textChanged.connect(self._on_text_changed)
         right.addWidget(self._text_edit, 1)
@@ -115,21 +136,23 @@ class DestroyTemplateEditor(QDialog):
         btn_row = QHBoxLayout()
         btn_row.addStretch()
 
-        cancel_btn = QPushButton(translator.t("cancel"), self)
+        # Outline pill: fill-less, palette-key border, static (hover=None keeps
+        # the normal look); the dropped 1px QSS border folds into the padding.
+        cancel_btn = HoverPillButton(translator.t("cancel"), self)
         cancel_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        cancel_btn.set_pill_colors(normal=None, hover=None, border='line')
         cancel_btn.setStyleSheet(
-            f"color: {p['text_dim']}; background: transparent; "
-            f"border: 1px solid {p['line']}; border-radius: {_rad(RAD_SM)}px; "
-            f"padding: 6px 16px; font-size: {_fs('fs_10')};"
+            f"color: {p['text_dim']}; background: transparent; border: none; "
+            f"padding: 7px 17px; font-size: {_fs('fs_10')};"
         )
         cancel_btn.clicked.connect(self.reject)
         btn_row.addWidget(cancel_btn)
 
-        save_btn = QPushButton(translator.t("ok"), self)
+        save_btn = HoverPillButton(translator.t("ok"), self)
         save_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        save_btn.set_pill_colors(normal='accent', hover='accent_hover')
         save_btn.setStyleSheet(
-            f"color: {p['accent_text']}; background: {p['accent']}; "
-            f"border: none; border-radius: {_rad(RAD_SM)}px; "
+            f"color: {p['accent_text']}; background: transparent; border: none; "
             f"padding: 6px 20px; font-size: {_fs('fs_11')}; font-weight: bold;"
         )
         save_btn.clicked.connect(self.accept)

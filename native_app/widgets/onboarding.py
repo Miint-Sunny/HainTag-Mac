@@ -15,6 +15,7 @@ from PyQt6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidg
 from ..i18n import Translator
 from ..theme import _fs, current_palette
 from ..ui_tokens import RAD_SM, _dp, _rad
+from .common import HoverPillButton, RoundedPanel
 
 
 @dataclass
@@ -40,9 +41,19 @@ class OnboardingOverlay(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, False)
         self.hide()
 
-        # Description panel
-        self._panel = QWidget(self)
+        # Description panel — self-painted AA rounded surface (QSS
+        # border-radius corners alias). Palette keys resolve at paint time, so
+        # theme swaps stay live. It's a child of the overlay (not a top-level
+        # frameless window), so no WA_TranslucentBackground is needed; the QSS
+        # rule keeps only background/border neutralised. The old 1px QSS
+        # border is now painted — content sits inside 12px+ layout margins, so
+        # the 1px layout-box change is imperceptible.
+        self._panel = RoundedPanel(self, bg='bg_surface', border='line_strong',
+                                   radius_token=RAD_SM)
         self._panel.setObjectName("OnboardingPanel")
+        self._panel.setStyleSheet(
+            "#OnboardingPanel { background: transparent; border: none; }"
+        )
 
         panel_layout = QVBoxLayout(self._panel)
         panel_layout.setContentsMargins(_dp(20), _dp(16), _dp(20), _dp(12))
@@ -72,9 +83,11 @@ class OnboardingOverlay(QWidget):
         self._skip_btn.clicked.connect(self._finish)
         btn_row.addWidget(self._skip_btn)
 
-        self._next_btn = QPushButton(self._panel)
+        # Accent pill self-painted with AA; QSS keeps only text/padding.
+        self._next_btn = HoverPillButton(parent=self._panel)
         self._next_btn.setObjectName("OnboardingNext")
         self._next_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._next_btn.set_pill_colors(normal='accent', hover='accent_hover')
         self._next_btn.clicked.connect(self._next_step)
         btn_row.addWidget(self._next_btn)
 
@@ -138,14 +151,12 @@ class OnboardingOverlay(QWidget):
         next_text = self._translator.t("onboarding_finish") if is_last else self._translator.t("onboarding_next")
         self._next_btn.setText(next_text)
         self._next_btn.setStyleSheet(
-            f"color: {p['accent_text']}; background: {p['accent']}; border: none; "
-            f"border-radius: {_rad(RAD_SM)}px; font-size: {_fs('fs_11')}; padding: 6px 16px;"
+            f"color: {p['accent_text']}; background: transparent; border: none; "
+            f"font-size: {_fs('fs_11')}; padding: 6px 16px;"
         )
 
-        self._panel.setStyleSheet(
-            f"#OnboardingPanel {{ background: {p['bg_surface']}; "
-            f"border: 1px solid {p['line_strong']}; border-radius: {_rad(RAD_SM)}px; }}"
-        )
+        # Panel surface is self-painted from live palette keys; just repaint.
+        self._panel.update()
         self._panel.adjustSize()
         self._position_panel(step)
         self.update()  # repaint overlay
