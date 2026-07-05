@@ -258,6 +258,27 @@ class DashedRectButton(QPushButton):
         super().paintEvent(event)
 
 
+class RoundedPanel(QWidget):
+    """Plain rounded surface (fill + 1px border) self-painted with
+    antialiasing — for overlay panels whose QSS border-radius would alias
+    (e.g. the dock drop-preview band). Colours are palette KEYS resolved at
+    paint time."""
+
+    def __init__(self, parent=None, *, bg: str, border: str,
+                 radius_token: int = RAD_SM) -> None:
+        super().__init__(parent)
+        self._panel_bg = bg
+        self._panel_border = border
+        self._radius_token = radius_token
+
+    def paintEvent(self, event) -> None:
+        pal = current_palette()
+        painter = QPainter(self)
+        paint_rounded_surface(painter, self.rect(), _rad(self._radius_token),
+                              bg=pal[self._panel_bg], border=pal[self._panel_border])
+        painter.end()
+
+
 class PillLabel(QLabel):
     """Capsule-shaped status label (radius == half height): the fill and
     border are self-painted with antialiasing — a QSS border-radius capsule

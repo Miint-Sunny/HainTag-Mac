@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QIcon, QPixmap
+from PyQt6.QtGui import QIcon, QPainter, QPixmap
 from PyQt6.QtWidgets import (
     QFormLayout,
     QHBoxLayout,
@@ -26,8 +26,11 @@ from ..ui_tokens import (
     CLS_FIELD_LABEL,
     CLS_FIELD_SPIN,
     CLS_IMAGE_SELECT_BUTTON,
+    RAD_SM,
     _dp,
+    _rad,
 )
+from ..icons import paint_rounded_surface
 from .common import DashedRectButton, HoverPillButton
 from .text_context_menu import install_localized_context_menus
 
@@ -36,6 +39,25 @@ class ExampleWidget(QWidget):
     changed = pyqtSignal()
     delete_requested = pyqtSignal(object)
     error_occurred = pyqtSignal(str, str)
+
+    def paintEvent(self, event) -> None:
+        # Entry fill + hover border self-painted with antialiasing — QSS
+        # border-radius corners are not. QSS keeps a same-size transparent box.
+        p = current_palette()
+        painter = QPainter(self)
+        paint_rounded_surface(
+            painter, self.rect(), _rad(RAD_SM), bg=p['bg_prompt'],
+            border=p['line_hover'] if self.underMouse() else p['line'],
+        )
+        painter.end()
+
+    def enterEvent(self, event) -> None:
+        self.update()
+        super().enterEvent(event)
+
+    def leaveEvent(self, event) -> None:
+        self.update()
+        super().leaveEvent(event)
 
     def __init__(self, translator: Translator, storage: AppStorage, entry: ExampleEntry, parent=None) -> None:
         super().__init__(parent)

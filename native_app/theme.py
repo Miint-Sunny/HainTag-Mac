@@ -289,9 +289,9 @@ QPushButton[class="DockItemButton"] {{
 }}
 
 #DockPreview {{
-    background: {dock_preview};
-    border: 1px solid {dock_preview_border};
-    border-radius: {rad_sm};
+    /* Surface self-painted (antialiased) in RoundedPanel. */
+    background: transparent;
+    border: none;
 }}
 
 /* ── Widget Cards ── */
@@ -512,31 +512,21 @@ QPushButton:disabled {{
 }}
 
 /* ── Prompt Entries ── */
+/* Fill, hover border and the expanded header tint are self-painted with
+   antialiasing in PromptEntryWidget.paintEvent; QSS keeps an identically
+   sized transparent box (1px border) so the layout doesn't move. */
 QFrame[class="PromptEntryFrame"] {{
-    background: {bg_prompt};
-    border: 1px solid {line};
-    border-radius: {rad_sm};
-}}
-
-QFrame[class="PromptEntryFrame"]:hover {{
-    border-color: {line_hover};
+    background: transparent;
+    border: 1px solid transparent;
 }}
 
 QWidget[class="PromptEntryHeader"] {{
     background: transparent;
-    border-top-left-radius: {rad_sm};
-    border-top-right-radius: {rad_sm};
-}}
-
-QFrame[class="PromptEntryFrame"][expanded="true"] QWidget[class="PromptEntryHeader"] {{
-    background: {hover_bg};
 }}
 
 QWidget[class="PromptEntryBody"] {{
     background: transparent;
     border-top: 1px solid {line};
-    border-bottom-left-radius: {rad_sm};
-    border-bottom-right-radius: {rad_sm};
 }}
 
 QFrame[class="PromptEntryFrame"] QLineEdit[class="FieldInput"],
@@ -551,14 +541,11 @@ QFrame[class="PromptEntryFrame"] QTextEdit[class="PromptTextEdit"] {{
 }}
 
 /* ── Example Entries ── */
+/* Fill + hover border self-painted (antialiased) in ExampleWidget.paintEvent;
+   QSS keeps the same 1px transparent box so the layout doesn't move. */
 QWidget[class="ExampleFrame"] {{
-    background: {bg_prompt};
-    border: 1px solid {line};
-    border-radius: {rad_sm};
-}}
-
-QWidget[class="ExampleFrame"]:hover {{
-    border-color: {line_hover};
+    background: transparent;
+    border: 1px solid transparent;
 }}
 
 QPushButton[class="PromptDeleteButton"],
@@ -749,21 +736,6 @@ QToolTip {{
 
 #OutputTabs QTabBar::tab:hover {{
     color: {text_body};
-}}
-
-/* ── Swap Button (floats on splitter handle) ── */
-#SwapButton {{
-    color: {text_dim};
-    background: {bg_surface};
-    border: 1px solid {line};
-    border-radius: {rad_sm};
-    font-size: {fs_10};
-    padding: 0;
-}}
-#SwapButton:hover {{
-    color: {accent_text};
-    border-color: {accent_handle};
-    background: {hover_bg_strong};
 }}
 
 /* ── Main Splitter ── */

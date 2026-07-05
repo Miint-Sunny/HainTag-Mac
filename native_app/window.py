@@ -93,7 +93,7 @@ from .ui_tokens import (
     _dp,
     _rad,
 )
-from .widgets.common import HoverPillButton, RoundHandleSlider
+from .widgets.common import HoverPillButton, RoundHandleSlider, RoundedPanel
 from .widgets.dock import DockPanel
 from .widgets.example_widget import ExampleWidget
 from .widgets.floating_tray import FloatingTrayWidget
@@ -394,7 +394,8 @@ class MainWindow(QWidget):
             self._library_panel.set_entries(artists, ocs)
         self._library_panel.set_current_section(self._state.settings.library_last_section)
 
-        self.dock_preview = QWidget(self.content_host)
+        self.dock_preview = RoundedPanel(self.content_host, bg='dock_preview',
+                                         border='dock_preview_border')
         self.dock_preview.setObjectName('DockPreview')
         self.dock_preview.hide()
 
@@ -490,7 +491,9 @@ class MainWindow(QWidget):
         main_root.addWidget(self._main_splitter, 1)
         self.main_card.set_content(self._main_container)
         # Swap button — floating on splitter handle
-        self._swap_btn = QPushButton("⇅", self._main_container)
+        self._swap_btn = HoverPillButton("⇅", self._main_container)
+        self._swap_btn.set_pill_colors(normal='bg_surface', hover='hover_bg_strong',
+                                       border='line_hover')
         self._swap_btn.setFixedSize(_dp(28), _dp(16))
         self._swap_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._swap_btn.setToolTip(self._translator.t('swap_layout'))
@@ -922,8 +925,8 @@ class MainWindow(QWidget):
                 f"QWidget#WorkbenchBottomPanel {{ background: {pal['bg_card_strip']}; }}"
                 f"QSplitter#WorkbenchMainSplitter {{ background: {pal['bg_card_strip']}; }}"
                 f"QSplitter#WorkbenchMainSplitter::handle:vertical {{ background: {pal['line']}; height: {_dp(1)}px; margin: {_dp(4)}px {_dp(16)}px; }}"
-                f"QPushButton#WorkbenchDividerHandle {{ background: {pal['bg_surface']}; color: {pal['text_muted']}; border: 1px solid {pal['line_hover']}; border-radius: {_rad(RAD_SM)}px; font-size: {_fs('fs_10')}; padding: 0px; }}"
-                f"QPushButton#WorkbenchDividerHandle:hover {{ background: {pal['hover_bg_strong']}; color: {pal['text']}; }}"
+                f"QPushButton#WorkbenchDividerHandle {{ background: transparent; color: {pal['text_muted']}; border: none; font-size: {_fs('fs_10')}; padding: 0px; }}"
+                f"QPushButton#WorkbenchDividerHandle:hover {{ color: {pal['text']}; }}"
                 f"QLabel#WorkbenchRightClickHint {{ color: {pal['text_label']}; background: transparent; font-size: {_fs('fs_9')}; font-style: italic; }}"
             )
         if hasattr(self, "_main_splitter") and self._main_splitter is not None:
