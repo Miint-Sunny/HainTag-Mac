@@ -151,9 +151,11 @@ class HoverPillButton(QPushButton):
 
     def paintEvent(self, event) -> None:
         active = self.property('active')
+        is_active = (active is True or active == 'true'
+                     or (self.isCheckable() and self.isChecked()))
         if not self.isEnabled():
             bg_key, border_key = self._pill_disabled, self._pill_border_disabled
-        elif self._pill_active is not None and (active is True or active == 'true'):
+        elif self._pill_active is not None and is_active:
             bg_key, border_key = self._pill_active, self._pill_border_active
         elif self.underMouse():
             bg_key, border_key = self._pill_hover, self._pill_border_hover

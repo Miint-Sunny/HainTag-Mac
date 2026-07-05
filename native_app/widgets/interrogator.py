@@ -188,39 +188,27 @@ def _local_colors() -> dict[str, str]:
     }
 
 
-def _local_button_style(*, primary: bool = False, compact: bool = False) -> str:
-    """Local-tab button QSS. Normal/primary buttons render their rounded
-    surface via the antialiased 9-patch (rad_sm, matching the app-wide
-    control language — QSS radius corners alias); compact buttons stay in
-    the small-control tier (rad_xs, aliasing invisible at 2px)."""
-    c = _local_colors()
-    fg = c["bg0"] if primary else c["fg1"]
-    if compact:
-        border = c["fg0"] if primary else c["line2"]
-        bg = c["fg0"] if primary else "transparent"
-        return (
-            f"QPushButton {{ background: {bg}; color: {fg}; border: 1px solid {border}; "
-            f"border-radius: {_rad(RAD_XS)}px; padding: 0px 8px; font-size: {_fs('fs_10')}; letter-spacing: 0.04em; }}"
-            f"QPushButton:hover {{ background: {c['accent_hover'] if primary else c['bg3']}; "
-            f"color: {c['bg0'] if primary else c['fg0']}; border-color: {c['fg3'] if not primary else c['accent_hover']}; }}"
-            f"QPushButton:disabled {{ color: {c['fg3']}; border-color: {c['line']}; background: transparent; }}"
-        )
-    from ..qss_surfaces import surface_decl
-    r = _rad(RAD_SM)
-    s = r + 1
-    # Original box: padding 6/12 + 1px border — pad_v absorbs into the slice
-    # so the total button height is unchanged.
-    pad = f"{max(0, _dp(6) + 1 - s)}px {max(0, _dp(12) + 1 - s)}px"
-    base = surface_decl(r, c["fg0"] if primary else "rgba(0, 0, 0, 0)",
-                        None if primary else c["line2"])
-    hover = surface_decl(r, c["accent_hover"] if primary else c["bg3"],
-                         None if primary else c["fg3"])
-    disabled = surface_decl(r, "rgba(0, 0, 0, 0)", c["line"])
-    return (
-        f"QPushButton {{ {base} color: {fg}; padding: {pad}; "
-        f"font-size: {_fs('fs_10')}; letter-spacing: 0.04em; }}"
-        f"QPushButton:hover {{ {hover} color: {c['bg0'] if primary else c['fg0']}; }}"
-        f"QPushButton:disabled {{ {disabled} color: {c['fg3']}; }}"
+def _local_pill(btn, *, primary: bool = False, compact: bool = False) -> None:
+    """Style a local-tab HoverPillButton exactly like the app-wide filled
+    rounded squares (the workbench copy/edit buttons): a solid self-painted
+    surface + hairline border — NOT the 9-patch, whose stretched corners read
+    rounder than the QPainter-drawn pills. Fills are palette KEYS resolved at
+    paint time; QSS only sets text metrics."""
+    p = current_palette()
+    if primary:
+        btn.set_pill_colors(normal='accent', hover='accent_hover',
+                            disabled='disabled_bg', border='accent_hover')
+        fg, fg_hover = p['accent_text'], p['accent_text_hover']
+    else:
+        btn.set_pill_colors(normal='bg_surface', hover='hover_bg_strong',
+                            disabled='disabled_bg', border='line_hover')
+        fg, fg_hover = p['text_body'], p['text']
+    pad = "0px 8px" if compact else "6px 12px"
+    btn.setStyleSheet(
+        f"QPushButton {{ background: transparent; border: none; color: {fg}; "
+        f"padding: {pad}; font-size: {_fs('fs_10')}; letter-spacing: 0.04em; }}"
+        f"QPushButton:hover {{ color: {fg_hover}; }}"
+        f"QPushButton:disabled {{ color: {p['disabled_text']}; }}"
     )
 
 
@@ -441,15 +429,15 @@ class _LocalTaggerTab(QWidget):
         self._setup_python_error.setWordWrap(True)
         self._setup_python_error.hide()
 
-        link_btn = QPushButton(self._t.t("interr_open_download"), steps_host)
+        link_btn = HoverPillButton(self._t.t("interr_open_download"), steps_host)
         link_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        link_btn.setStyleSheet(_local_button_style())
+        _local_pill(link_btn)
         link_btn.clicked.connect(lambda: QDesktopServices.openUrl(
             QUrl("https://huggingface.co/cella110n/cl_tagger/tree/main/cl_tagger_1_02")
         ))
-        select_btn = QPushButton(self._t.t("interr_select_model_dir"), steps_host)
+        select_btn = HoverPillButton(self._t.t("interr_select_model_dir"), steps_host)
         select_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        select_btn.setStyleSheet(_local_button_style(primary=True))
+        _local_pill(select_btn, primary=True)
         select_btn.clicked.connect(self._browse_model_dir)
         model_actions = [link_btn, select_btn]
 
@@ -463,13 +451,13 @@ class _LocalTaggerTab(QWidget):
         self._setup_model_step = model_step
         steps_layout.addWidget(model_step)
 
-        self._auto_setup_btn = QPushButton(self._t.t("interr_auto_setup"), steps_host)
+        self._auto_setup_btn = HoverPillButton(self._t.t("interr_auto_setup"), steps_host)
         self._auto_setup_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._auto_setup_btn.setStyleSheet(_local_button_style(primary=True))
+        _local_pill(self._auto_setup_btn, primary=True)
         self._auto_setup_btn.clicked.connect(self._start_env_setup)
-        manual_btn = QPushButton(self._t.t("interr_manual_python"), steps_host)
+        manual_btn = HoverPillButton(self._t.t("interr_manual_python"), steps_host)
         manual_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        manual_btn.setStyleSheet(_local_button_style())
+        _local_pill(manual_btn)
         manual_btn.clicked.connect(self._browse_python)
 
         self._setup_progress = QProgressBar(steps_host)
@@ -492,9 +480,9 @@ class _LocalTaggerTab(QWidget):
         self._setup_python_step = python_step
         steps_layout.addWidget(python_step)
 
-        self._start_ready_btn = QPushButton(self._t.t("interr_start_using") + " →", steps_host)
+        self._start_ready_btn = HoverPillButton(self._t.t("interr_start_using") + " →", steps_host)
         self._start_ready_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._start_ready_btn.setStyleSheet(_local_button_style(primary=True))
+        _local_pill(self._start_ready_btn, primary=True)
         self._start_ready_btn.clicked.connect(self._confirm_and_switch)
         self._start_ready_btn.hide()
         ready_step = self._create_local_step(
@@ -653,11 +641,11 @@ class _LocalTaggerTab(QWidget):
         self._path_display.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         self._path_display.setStyleSheet(f"color: {p['text_dim']}; font-size: {_fs('fs_9')};")
         path_row.addWidget(self._path_display, 1)
-        browse_btn = QPushButton("…", path_bar)
+        browse_btn = HoverPillButton("…", path_bar)
         browse_btn.setFixedSize(_dp(26), _dp(26))
         browse_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         browse_btn.setToolTip(self._t.t("interr_browse_dir_tip"))
-        browse_btn.setStyleSheet(_local_button_style(compact=True))
+        _local_pill(browse_btn, compact=True)
         browse_btn.clicked.connect(self._browse_model_dir)
         path_row.addWidget(browse_btn)
         path_bar.setLayout(path_row)
@@ -681,9 +669,9 @@ class _LocalTaggerTab(QWidget):
         self._drop_zone.setMinimumHeight(_dp(120))
         self._drop_zone.image_selected.connect(self._on_image_selected)
         image_layout.addWidget(self._drop_zone, 1)
-        self._change_image_btn = QPushButton(self._t.t("change_image"), image_col)
+        self._change_image_btn = HoverPillButton(self._t.t("change_image"), image_col)
         self._change_image_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._change_image_btn.setStyleSheet(_local_button_style())
+        _local_pill(self._change_image_btn)
         self._change_image_btn.clicked.connect(self._select_local_image)
         image_layout.addWidget(self._change_image_btn)
         main.addWidget(image_col)
@@ -715,22 +703,22 @@ class _LocalTaggerTab(QWidget):
         self._footer_status = QLabel("", footer)
         self._footer_status.setStyleSheet(f"color: {p['text_dim']}; font-size: {_fs('fs_9')};")
         footer_layout.addWidget(self._footer_status, 1)
-        self._conf_btn = QPushButton(
+        self._conf_btn = HoverPillButton(
             self._t.t("interr_hide_conf") if self._show_conf else self._t.t("interr_show_conf"),
             footer,
         )
         self._conf_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._conf_btn.setStyleSheet(_local_button_style())
+        _local_pill(self._conf_btn)
         self._conf_btn.clicked.connect(self._toggle_confidence)
         footer_layout.addWidget(self._conf_btn)
-        self._copy_btn = QPushButton(self._t.t("copy"), footer)
+        self._copy_btn = HoverPillButton(self._t.t("copy"), footer)
         self._copy_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._copy_btn.setStyleSheet(_local_button_style())
+        _local_pill(self._copy_btn)
         self._copy_btn.clicked.connect(self._copy_result)
         footer_layout.addWidget(self._copy_btn)
-        self._send_btn = QPushButton(self._t.t("interrogator_send_to_input") + " →", footer)
+        self._send_btn = HoverPillButton(self._t.t("interrogator_send_to_input") + " →", footer)
         self._send_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._send_btn.setStyleSheet(_local_button_style(primary=True))
+        _local_pill(self._send_btn, primary=True)
         self._send_btn.clicked.connect(self._send_result)
         footer_layout.addWidget(self._send_btn)
         layout.addWidget(footer)
@@ -1575,9 +1563,9 @@ class _LocalTaggerTab(QWidget):
         box_layout.setContentsMargins(_dp(12), _dp(12), _dp(12), _dp(12))
         box_layout.setSpacing(_dp(8))
         box_layout.addWidget(self._make_error_banner(error, box))
-        back_btn = QPushButton(self._t.t("interr_back_to_setup"), box)
+        back_btn = HoverPillButton(self._t.t("interr_back_to_setup"), box)
         back_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        back_btn.setStyleSheet(_local_button_style())
+        _local_pill(back_btn)
         back_btn.clicked.connect(lambda: (self._stack.setCurrentIndex(0), self._update_setup_status()))
         box_layout.addWidget(back_btn, 0, Qt.AlignmentFlag.AlignLeft)
         box_layout.addStretch()
@@ -1644,7 +1632,7 @@ class _LocalTaggerTab(QWidget):
             self._conf_btn.setText(self._t.t("interr_hide_conf"))
         else:
             self._conf_btn.setText(self._t.t("interr_show_conf"))
-        self._conf_btn.setStyleSheet(_local_button_style())
+        _local_pill(self._conf_btn)
         self._render_results()
         if not self._populating_settings:
             self.settings_changed.emit()
@@ -1805,8 +1793,11 @@ class _SegmentButton(QPushButton):
             bg = c['bg3']
         if bg:
             painter = QPainter(self)
+            # Squarer than the frame (rad_xs+1): the app language is rounded
+            # SQUARES — a near-capsule inner block reads too round.
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
             paint_rounded_surface(painter, self.rect(),
-                                  max(2.0, _rad(RAD_SM) - 1.0), bg=bg)
+                                  _rad(RAD_XS) + 1, bg=bg)
             painter.end()
         super().paintEvent(event)
 
@@ -2159,7 +2150,7 @@ class _LLMTaggerTab(QWidget):
         self._preset_combo.currentIndexChanged.connect(self._on_preset_selected)
         top.addWidget(self._preset_combo)
 
-        self._edit_btn = QPushButton("✎", self._top_bar)
+        self._edit_btn = HoverPillButton("✎", self._top_bar)
         self._edit_btn.setObjectName("LLMIconButton")
         self._edit_btn.setCheckable(True)
         self._edit_btn.setFixedSize(_dp(26), _dp(26))
@@ -2167,7 +2158,7 @@ class _LLMTaggerTab(QWidget):
         self._edit_btn.clicked.connect(self._toggle_editor)
         top.addWidget(self._edit_btn)
 
-        self._layout_btn = QPushButton("↺", self._top_bar)
+        self._layout_btn = HoverPillButton("↺", self._top_bar)
         self._layout_btn.setObjectName("LLMIconButton")
         self._layout_btn.setFixedSize(_dp(26), _dp(26))
         self._layout_btn.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -2177,7 +2168,7 @@ class _LLMTaggerTab(QWidget):
         self._stats_label = QLabel("", self._top_bar)
         top.addWidget(self._stats_label, 1)
 
-        self._start_btn = QPushButton(self._t.t("interrogator_start"), self._top_bar)
+        self._start_btn = HoverPillButton(self._t.t("interrogator_start"), self._top_bar)
         self._start_btn.setObjectName("LLMPrimaryButton")
         self._start_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._start_btn.clicked.connect(self._toggle_run)
@@ -2198,14 +2189,14 @@ class _LLMTaggerTab(QWidget):
         self._name_edit.textChanged.connect(self._on_name_edited)
         edit_row.addWidget(self._name_edit, 1)
 
-        self._add_preset_btn = QPushButton("+", self._edit_panel)
+        self._add_preset_btn = HoverPillButton("+", self._edit_panel)
         self._add_preset_btn.setObjectName("LLMIconButton")
         self._add_preset_btn.setFixedSize(_dp(26), _dp(26))
         self._add_preset_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._add_preset_btn.clicked.connect(self._add_preset)
         edit_row.addWidget(self._add_preset_btn)
 
-        self._del_preset_btn = QPushButton("×", self._edit_panel)
+        self._del_preset_btn = HoverPillButton("×", self._edit_panel)
         self._del_preset_btn.setObjectName("LLMIconButton")
         self._del_preset_btn.setFixedSize(_dp(26), _dp(26))
         self._del_preset_btn.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -2221,7 +2212,7 @@ class _LLMTaggerTab(QWidget):
         self._prompt_edit.textChanged.connect(self._on_text_edited)
         edit_layout.addWidget(self._prompt_edit)
 
-        self._api_toggle = QPushButton(self._t.t("llm_tagger_use_separate_api"), self._edit_panel)
+        self._api_toggle = HoverPillButton(self._t.t("llm_tagger_use_separate_api"), self._edit_panel)
         self._api_toggle.setObjectName("LLMToggleButton")
         self._api_toggle.setCheckable(True)
         self._api_toggle.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -2334,15 +2325,15 @@ class _LLMTaggerTab(QWidget):
         footer_layout = QHBoxLayout(footer)
         footer_layout.setContentsMargins(_dp(12), _dp(8), _dp(12), _dp(8))
         footer_layout.setSpacing(_dp(8))
-        self._copy_current_btn = QPushButton(self._t.t("llm_tagger_copy_current"), footer)
+        self._copy_current_btn = HoverPillButton(self._t.t("llm_tagger_copy_current"), footer)
         self._copy_current_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._copy_current_btn.clicked.connect(self._copy_current)
         footer_layout.addWidget(self._copy_current_btn, 1)
-        self._copy_all_btn = QPushButton(self._t.t("llm_tagger_copy_all"), footer)
+        self._copy_all_btn = HoverPillButton(self._t.t("llm_tagger_copy_all"), footer)
         self._copy_all_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._copy_all_btn.clicked.connect(self._copy_all)
         footer_layout.addWidget(self._copy_all_btn, 1)
-        self._send_all_btn = QPushButton(self._t.t("llm_tagger_send_all"), footer)
+        self._send_all_btn = HoverPillButton(self._t.t("llm_tagger_send_all"), footer)
         self._send_all_btn.setObjectName("LLMPrimaryButton")
         self._send_all_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._send_all_btn.clicked.connect(self._send_all)
@@ -2756,6 +2747,12 @@ class _LLMTaggerTab(QWidget):
         )
         self._start_btn.setText(self._t.t("llm_tagger_stop") if self._is_running else self._t.t("llm_tagger_start"))
         self._start_btn.setObjectName("LLMDangerButton" if self._is_running else "LLMPrimaryButton")
+        if self._is_running:
+            self._start_btn.set_pill_colors(normal='bg_surface', hover='hover_bg_strong',
+                                            border='close_hover')
+        else:
+            self._start_btn.set_pill_colors(normal='accent', hover='accent_hover',
+                                            border='accent_hover')
         self._start_btn.style().unpolish(self._start_btn)
         self._start_btn.style().polish(self._start_btn)
 
@@ -2970,14 +2967,18 @@ class _LLMTaggerTab(QWidget):
             f"{surface_decl(r, c['bg0'], c['line'])} "
             f"padding: {max(0, _dp(5) + 1 - s)}px {max(0, _dp(8) + 1 - s)}px;"
         )
-        btn_pad = f"{max(0, _dp(6) + 1 - s)}px {max(0, _dp(12) + 1 - s)}px"
-        # Small fixed-size buttons (icon/toggle) stay in the rad_xs tier —
-        # the 9-patch slice would eat their content box; border-image must be
-        # reset explicitly since the base QPushButton rule sets one.
-        small_btn = (
-            f"border-image: none; background: transparent; border: 1px solid {c['line2']}; "
-            f"border-radius: {_rad(RAD_XS)}px; border-width: 1px;"
-        )
+        # Button surfaces are self-painted by HoverPillButton — same class as
+        # the workbench copy/edit buttons, so the shape matches exactly. QSS
+        # below only sets text metrics; pill fills are palette keys.
+        for b in (self._edit_btn, self._layout_btn, self._add_preset_btn, self._del_preset_btn):
+            b.set_pill_colors(normal='bg_surface', hover='hover_bg_strong', border='line')
+        for b in (self._copy_current_btn, self._copy_all_btn):
+            b.set_pill_colors(normal='bg_surface', hover='hover_bg_strong', border='line_hover')
+        self._send_all_btn.set_pill_colors(normal='accent', hover='accent_hover',
+                                           border='accent_hover')
+        self._api_toggle.set_pill_colors(normal='bg_surface', hover='hover_bg_strong',
+                                         active='hover_bg_strong', border='line',
+                                         border_active='text_muted')
         self.setStyleSheet(
             f"QWidget#LLMTopBar, QWidget#LLMFooter {{ background: {c['bg2']}; border-top: 1px solid {c['line']}; border-bottom: 1px solid {c['line']}; }}"
             f"QWidget#LLMEditorPanel {{ background: {c['bg2']}; border-top: 1px solid {c['line']}; }}"
@@ -2989,18 +2990,13 @@ class _LLMTaggerTab(QWidget):
             f"QComboBox, QLineEdit, QTextEdit {{ {control} }}"
             f"QComboBox::drop-down {{ border: none; width: {_dp(18)}px; }}"
             f"QPushButton {{ font-size: {_fs('fs_10')}; color: {c['fg1']}; "
-            f"{surface_decl(r, 'rgba(0, 0, 0, 0)', c['line2'])} padding: {btn_pad}; letter-spacing: 0.04em; }}"
-            f"QPushButton:hover {{ {surface_decl(r, c['bg3'], c['line2'])} color: {c['fg0']}; }}"
-            f"QPushButton#LLMPrimaryButton {{ {surface_decl(r, c['accent'], c['accent_hover'])} color: {c['accent_text']}; }}"
-            f"QPushButton#LLMPrimaryButton:hover {{ {surface_decl(r, c['accent_hover'], c['accent_hover'])} color: {c['accent_text']}; }}"
-            f"QPushButton#LLMDangerButton {{ {surface_decl(r, 'rgba(0, 0, 0, 0)', c['hot'])} color: {c['hot']}; }}"
-            f"QPushButton#LLMDangerButton:hover {{ {surface_decl(r, c['bg3'], c['hot'])} color: {c['hot']}; }}"
-            f"QPushButton#LLMIconButton {{ {small_btn} padding: 0px; }}"
-            f"QPushButton#LLMIconButton:hover {{ background: {c['bg3']}; color: {c['fg0']}; }}"
-            f"QPushButton#LLMToggleButton {{ {small_btn} padding: {_dp(4)}px {_dp(8)}px; }}"
-            f"QPushButton#LLMToggleButton:hover {{ background: {c['bg3']}; color: {c['fg0']}; }}"
-            f"QPushButton#LLMToggleButton:checked {{ color: {c['fg0']}; background: {c['bg3']}; border-color: {c['fg2']}; }}"
-            f"QPushButton#SecondaryButton {{ {surface_decl(r, 'rgba(0, 0, 0, 0)', c['line2'])} color: {c['fg1']}; }}"
+            f"background: transparent; border: none; padding: {_dp(6)}px {_dp(12)}px; letter-spacing: 0.04em; }}"
+            f"QPushButton:hover {{ color: {c['fg0']}; }}"
+            f"QPushButton#LLMPrimaryButton {{ color: {c['accent_text']}; }}"
+            f"QPushButton#LLMDangerButton {{ color: {c['hot']}; }}"
+            f"QPushButton#LLMIconButton {{ padding: {_dp(2)}px {_dp(6)}px; }}"
+            f"QPushButton#LLMToggleButton {{ padding: {_dp(4)}px {_dp(8)}px; }}"
+            f"QPushButton#LLMToggleButton:checked {{ color: {c['fg0']}; }}"
             f"QScrollArea {{ background: {c['bg1']}; border: none; }}"
             f"QScrollArea#LLMThumbStrip {{ background: {c['bg1']}; border-top: 1px solid {c['line']}; }}"
             f"QProgressBar {{ background: {c['bg3']}; border: none; border-radius: {_rad(RAD_XS)}px; }}"
