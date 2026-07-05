@@ -33,7 +33,7 @@ from ..file_filters import image_filter, python_filter
 from ..theme import _fs, current_palette, is_theme_light
 from ..ui_tokens import _dp, _rad, RAD_SM, RAD_XS
 from ..icons import paint_rounded_surface
-from .common import DashedRectButton, RoundHandleSlider
+from .common import DashedRectButton, HoverPillButton, RoundHandleSlider
 from .output_widget import CATEGORY_COLORS, CATEGORY_COLORS_LIGHT
 
 
@@ -189,17 +189,38 @@ def _local_colors() -> dict[str, str]:
 
 
 def _local_button_style(*, primary: bool = False, compact: bool = False) -> str:
+    """Local-tab button QSS. Normal/primary buttons render their rounded
+    surface via the antialiased 9-patch (rad_sm, matching the app-wide
+    control language — QSS radius corners alias); compact buttons stay in
+    the small-control tier (rad_xs, aliasing invisible at 2px)."""
     c = _local_colors()
-    bg = c["fg0"] if primary else "transparent"
     fg = c["bg0"] if primary else c["fg1"]
-    border = c["fg0"] if primary else c["line2"]
-    pad = "0px 8px" if compact else "6px 12px"
+    if compact:
+        border = c["fg0"] if primary else c["line2"]
+        bg = c["fg0"] if primary else "transparent"
+        return (
+            f"QPushButton {{ background: {bg}; color: {fg}; border: 1px solid {border}; "
+            f"border-radius: {_rad(RAD_XS)}px; padding: 0px 8px; font-size: {_fs('fs_10')}; letter-spacing: 0.04em; }}"
+            f"QPushButton:hover {{ background: {c['accent_hover'] if primary else c['bg3']}; "
+            f"color: {c['bg0'] if primary else c['fg0']}; border-color: {c['fg3'] if not primary else c['accent_hover']}; }}"
+            f"QPushButton:disabled {{ color: {c['fg3']}; border-color: {c['line']}; background: transparent; }}"
+        )
+    from ..qss_surfaces import surface_decl
+    r = _rad(RAD_SM)
+    s = r + 1
+    # Original box: padding 6/12 + 1px border — pad_v absorbs into the slice
+    # so the total button height is unchanged.
+    pad = f"{max(0, _dp(6) + 1 - s)}px {max(0, _dp(12) + 1 - s)}px"
+    base = surface_decl(r, c["fg0"] if primary else "rgba(0, 0, 0, 0)",
+                        None if primary else c["line2"])
+    hover = surface_decl(r, c["accent_hover"] if primary else c["bg3"],
+                         None if primary else c["fg3"])
+    disabled = surface_decl(r, "rgba(0, 0, 0, 0)", c["line"])
     return (
-        f"QPushButton {{ background: {bg}; color: {fg}; border: 1px solid {border}; "
-        f"border-radius: {_rad(RAD_XS)}px; padding: {pad}; font-size: {_fs('fs_10')}; letter-spacing: 0.04em; }}"
-        f"QPushButton:hover {{ background: {c['accent_hover'] if primary else c['bg3']}; "
-        f"color: {c['bg0'] if primary else c['fg0']}; border-color: {c['fg3'] if not primary else c['accent_hover']}; }}"
-        f"QPushButton:disabled {{ color: {c['fg3']}; border-color: {c['line']}; background: transparent; }}"
+        f"QPushButton {{ {base} color: {fg}; padding: {pad}; "
+        f"font-size: {_fs('fs_10')}; letter-spacing: 0.04em; }}"
+        f"QPushButton:hover {{ {hover} color: {c['bg0'] if primary else c['fg0']}; }}"
+        f"QPushButton:disabled {{ {disabled} color: {c['fg3']}; }}"
     )
 
 
@@ -1128,12 +1149,13 @@ class _LocalTaggerTab(QWidget):
                 btn.setText(self._t.t("interr_install_done"))
                 btn.setEnabled(False)
                 self._setup_status.setText(self._t.t("interr_deps_installed"))
-                restart_btn = QPushButton(self._t.t("interr_restart"), self)
+                restart_btn = HoverPillButton(self._t.t("interr_restart"), self)
+                restart_btn.set_pill_colors(normal='accent', hover='accent_hover')
                 restart_btn.setCursor(Qt.CursorShape.PointingHandCursor)
                 p = current_palette()
                 restart_btn.setStyleSheet(
-                    f"background: {p['accent']}; color: {p['accent_text']}; "
-                    f"border: none; border-radius: {_rad(RAD_SM)}px; padding: 8px 20px; "
+                    f"background: transparent; color: {p['accent_text']}; "
+                    f"border: none; padding: 8px 20px; "
                     f"font-size: {_fs('fs_11')}; font-weight: bold;"
                 )
                 restart_btn.clicked.connect(self._restart_app)
@@ -1769,6 +1791,34 @@ def _readable_text_for_hex(bg: str) -> str:
     return "#111111" if luminance > 160 else "#ffffff"
 
 
+class _SegmentButton(QPushButton):
+    """Segmented-switch half: the checked/hover fill is self-painted with
+    antialiased corners — QSS radius aliases, and a 9-patch border-width
+    would inflate the fixed 24px height. Colours resolve at paint time."""
+
+    def paintEvent(self, event):
+        c = _llm_colors()
+        bg = None
+        if self.isChecked():
+            bg = c['accent_hover'] if self.underMouse() else c['accent']
+        elif self.underMouse():
+            bg = c['bg3']
+        if bg:
+            painter = QPainter(self)
+            paint_rounded_surface(painter, self.rect(),
+                                  max(2.0, _rad(RAD_SM) - 1.0), bg=bg)
+            painter.end()
+        super().paintEvent(event)
+
+    def enterEvent(self, event):
+        self.update()
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        self.update()
+        super().leaveEvent(event)
+
+
 class _InterrogatorModeSwitch(QFrame):
     mode_changed = pyqtSignal(int)
 
@@ -1781,11 +1831,11 @@ class _InterrogatorModeSwitch(QFrame):
         layout = QHBoxLayout(self)
         layout.setContentsMargins(_dp(1), _dp(1), _dp(1), _dp(1))
         layout.setSpacing(0)
-        self._local_btn = QPushButton(self)
+        self._local_btn = _SegmentButton(self)
         self._local_btn.setCheckable(True)
         self._local_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._local_btn.clicked.connect(lambda: self.mode_changed.emit(0))
-        self._llm_btn = QPushButton(self)
+        self._llm_btn = _SegmentButton(self)
         self._llm_btn.setCheckable(True)
         self._llm_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._llm_btn.clicked.connect(lambda: self.mode_changed.emit(1))
@@ -1808,20 +1858,29 @@ class _InterrogatorModeSwitch(QFrame):
         self._llm_btn.setText(self._t.t("interrogator_llm"))
         self.apply_theme()
 
+    def paintEvent(self, event) -> None:
+        # Switch frame self-painted with antialiased rad_sm corners.
+        c = _llm_colors()
+        painter = QPainter(self)
+        paint_rounded_surface(painter, self.rect(), _rad(RAD_SM),
+                              bg=c['bg0'], border=c['line2'])
+        painter.end()
+
     def apply_theme(self) -> None:
         c = _llm_colors()
         self.setStyleSheet(
-            f"QFrame#InterrogatorModeSwitch {{ background: {c['bg0']}; border: 1px solid {c['line2']}; border-radius: {_rad(RAD_XS)}px; }}"
+            "QFrame#InterrogatorModeSwitch { background: transparent; border: none; }"
         )
         for btn in (self._local_btn, self._llm_btn):
             active = btn.isChecked()
+            # Fills are self-painted in _SegmentButton; QSS only colours text.
             btn.setStyleSheet(
-                f"QPushButton {{ background: {c['accent'] if active else 'transparent'}; "
-                f"color: {c['accent_text'] if active else c['fg2']}; border: none; border-radius: 0px; "
+                f"QPushButton {{ background: transparent; "
+                f"color: {c['accent_text'] if active else c['fg2']}; border: none; "
                 f"padding: 2px 10px; font-size: {_fs('fs_10')}; }}"
-                f"QPushButton:hover {{ background: {c['accent_hover'] if active else c['bg3']}; "
-                f"color: {c['accent_text'] if active else c['fg0']}; }}"
+                f"QPushButton:hover {{ color: {c['accent_text'] if active else c['fg0']}; }}"
             )
+            btn.update()
 
 
 class _LLMTagChip(QPushButton):
@@ -1910,24 +1969,34 @@ class _LLMThumbButton(QFrame):
         self._index = index
 
     def set_selected(self, selected: bool) -> None:
-        c = _llm_colors()
-        border = c["fg0"] if selected else c["line2"]
-        width = 2 if selected else 1
-        self.setStyleSheet(
-            f"QFrame {{ background: {c['bg3']}; border: {width}px solid {border}; "
-            f"border-radius: {_rad(RAD_XS)}px; }}"
-        )
+        self._selected = selected
+        self.setStyleSheet("QFrame { background: transparent; border: none; }")
         self._active_dot.setVisible(selected)
+        self.update()
+
+    def paintEvent(self, event) -> None:
+        # Thumb frame self-painted with antialiased rad_sm corners; the
+        # pixmap sits inset so the rounded frame stays visible.
+        c = _llm_colors()
+        painter = QPainter(self)
+        selected = getattr(self, '_selected', False)
+        paint_rounded_surface(
+            painter, self.rect(), _rad(RAD_SM), bg=c['bg3'],
+            border=c['fg0'] if selected else c['line2'],
+            border_w=2.0 if selected else 1.0,
+        )
+        painter.end()
 
     def apply_theme(self) -> None:
         c = _llm_colors()
         self._remove_btn.setStyleSheet(
             f"QPushButton {{ background: {c['bg3']}; color: {c['fg2']}; "
-            f"border: 1px solid {c['line']}; border-radius: 0px; padding: 0px; "
+            f"border: 1px solid {c['line']}; border-radius: {_rad(RAD_XS)}px; padding: 0px; "
             f"font-size: {_fs('fs_8')}; }}"
             f"QPushButton:hover {{ color: {c['hot']}; border-color: {c['hot']}; }}"
         )
         self._active_dot.setStyleSheet(f"background: {c['fg0']}; border-radius: 2px;")
+        self.update()
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
@@ -2779,7 +2848,7 @@ class _LLMTaggerTab(QWidget):
             thumb.remove_requested.connect(self._remove_image)
             self._thumb_layout.addWidget(thumb)
 
-        add_btn = DashedRectButton("+", self._thumb_container, radius_token=RAD_XS,
+        add_btn = DashedRectButton("+", self._thumb_container, radius_token=RAD_SM,
                                    border='line_strong', border_hover='text_muted')
         add_btn.setFixedSize(_dp(thumb_w), _dp(thumb_h))
         add_btn.setToolTip(self._t.t("llm_tagger_add_images"))
@@ -2888,10 +2957,26 @@ class _LLMTaggerTab(QWidget):
     # ── Theme / i18n ──
 
     def apply_theme(self):
+        from ..qss_surfaces import surface_decl
         c = _llm_colors()
+        r = _rad(RAD_SM)
+        s = r + 1
+        # Inputs and text buttons render their rounded surface via the AA
+        # 9-patch at rad_sm (app-wide control language; QSS radius aliases).
+        # Padding compensates border-width == slice; button height is
+        # preserved exactly (6+1 == slice at 100% scale).
         control = (
-            f"font-size: {_fs('fs_10')}; background: {c['bg0']}; color: {c['fg0']}; "
-            f"border: 1px solid {c['line']}; border-radius: {_rad(RAD_XS)}px; padding: {_dp(5)}px {_dp(8)}px;"
+            f"font-size: {_fs('fs_10')}; color: {c['fg0']}; "
+            f"{surface_decl(r, c['bg0'], c['line'])} "
+            f"padding: {max(0, _dp(5) + 1 - s)}px {max(0, _dp(8) + 1 - s)}px;"
+        )
+        btn_pad = f"{max(0, _dp(6) + 1 - s)}px {max(0, _dp(12) + 1 - s)}px"
+        # Small fixed-size buttons (icon/toggle) stay in the rad_xs tier —
+        # the 9-patch slice would eat their content box; border-image must be
+        # reset explicitly since the base QPushButton rule sets one.
+        small_btn = (
+            f"border-image: none; background: transparent; border: 1px solid {c['line2']}; "
+            f"border-radius: {_rad(RAD_XS)}px; border-width: 1px;"
         )
         self.setStyleSheet(
             f"QWidget#LLMTopBar, QWidget#LLMFooter {{ background: {c['bg2']}; border-top: 1px solid {c['line']}; border-bottom: 1px solid {c['line']}; }}"
@@ -2903,16 +2988,19 @@ class _LLMTaggerTab(QWidget):
             f"QSplitter#LLMWorkbenchSplitter::handle:horizontal:hover {{ background: {c['accent_text']}; }}"
             f"QComboBox, QLineEdit, QTextEdit {{ {control} }}"
             f"QComboBox::drop-down {{ border: none; width: {_dp(18)}px; }}"
-            f"QPushButton {{ font-size: {_fs('fs_10')}; background: transparent; color: {c['fg1']}; "
-            f"border: 1px solid {c['line2']}; border-radius: 0px; padding: {_dp(6)}px {_dp(12)}px; letter-spacing: 0.04em; }}"
-            f"QPushButton:hover {{ background: {c['bg3']}; color: {c['fg0']}; border-color: {c['line2']}; }}"
-            f"QPushButton#LLMPrimaryButton {{ background: {c['accent']}; color: {c['accent_text']}; border-color: {c['accent_hover']}; }}"
-            f"QPushButton#LLMPrimaryButton:hover {{ background: {c['accent_hover']}; color: {c['accent_text']}; border-color: {c['accent_hover']}; }}"
-            f"QPushButton#LLMDangerButton {{ color: {c['hot']}; border-color: {c['hot']}; }}"
-            f"QPushButton#LLMIconButton {{ padding: 0px; }}"
-            f"QPushButton#LLMToggleButton {{ padding: {_dp(4)}px {_dp(8)}px; }}"
+            f"QPushButton {{ font-size: {_fs('fs_10')}; color: {c['fg1']}; "
+            f"{surface_decl(r, 'rgba(0, 0, 0, 0)', c['line2'])} padding: {btn_pad}; letter-spacing: 0.04em; }}"
+            f"QPushButton:hover {{ {surface_decl(r, c['bg3'], c['line2'])} color: {c['fg0']}; }}"
+            f"QPushButton#LLMPrimaryButton {{ {surface_decl(r, c['accent'], c['accent_hover'])} color: {c['accent_text']}; }}"
+            f"QPushButton#LLMPrimaryButton:hover {{ {surface_decl(r, c['accent_hover'], c['accent_hover'])} color: {c['accent_text']}; }}"
+            f"QPushButton#LLMDangerButton {{ {surface_decl(r, 'rgba(0, 0, 0, 0)', c['hot'])} color: {c['hot']}; }}"
+            f"QPushButton#LLMDangerButton:hover {{ {surface_decl(r, c['bg3'], c['hot'])} color: {c['hot']}; }}"
+            f"QPushButton#LLMIconButton {{ {small_btn} padding: 0px; }}"
+            f"QPushButton#LLMIconButton:hover {{ background: {c['bg3']}; color: {c['fg0']}; }}"
+            f"QPushButton#LLMToggleButton {{ {small_btn} padding: {_dp(4)}px {_dp(8)}px; }}"
+            f"QPushButton#LLMToggleButton:hover {{ background: {c['bg3']}; color: {c['fg0']}; }}"
             f"QPushButton#LLMToggleButton:checked {{ color: {c['fg0']}; background: {c['bg3']}; border-color: {c['fg2']}; }}"
-            f"QPushButton#SecondaryButton {{ color: {c['fg1']}; background: transparent; border-color: {c['line2']}; }}"
+            f"QPushButton#SecondaryButton {{ {surface_decl(r, 'rgba(0, 0, 0, 0)', c['line2'])} color: {c['fg1']}; }}"
             f"QScrollArea {{ background: {c['bg1']}; border: none; }}"
             f"QScrollArea#LLMThumbStrip {{ background: {c['bg1']}; border-top: 1px solid {c['line']}; }}"
             f"QProgressBar {{ background: {c['bg3']}; border: none; border-radius: {_rad(RAD_XS)}px; }}"
