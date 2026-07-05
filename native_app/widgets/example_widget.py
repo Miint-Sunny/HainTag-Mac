@@ -8,7 +8,6 @@ from PyQt6.QtWidgets import (
     QFormLayout,
     QHBoxLayout,
     QLabel,
-    QPushButton,
     QSpinBox,
     QTextEdit,
     QVBoxLayout,
