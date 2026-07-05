@@ -17,6 +17,7 @@ from PyQt6.QtCore import (
     QMimeData,
     QModelIndex,
     QPoint,
+    QRectF,
     QSize,
     QTimer,
     QUrl,
@@ -49,9 +50,9 @@ from ..i18n import Translator
 from ..metadata import MetadataReader, MetadataWriter, ImageMetadata
 from ..metadata.thumb_cache import ThumbCache
 from ..theme import _fs, current_palette, is_theme_light
-from ..icons import pin_icon, paint_rounded_surface, to_qcolor
+from ..icons import pin_icon, paint_rounded_surface, rounded_rect_path, to_qcolor
 from ..ui_tokens import CLS_METADATA_TEXT, RAD_MD, RAD_SM, RAD_XS, _dp, _rad
-from .common import RoundHandleSlider
+from .common import HoverPillButton, RoundHandleSlider
 from .collapsible_section import CollapsibleSection
 from .text_context_menu import apply_app_menu_style, install_localized_context_menus
 
@@ -132,20 +133,43 @@ class _RoundedSurface(QWidget):
     """A container whose rounded body + border is painted (antialiased) rather
     than drawn by QSS, which rasterises corners poorly. The widget is translucent
     so the rounded corners show the parent; sub-control QSS still applies to
-    children via the object-name rules set on this widget."""
+    children via the object-name rules set on this widget.
 
-    def __init__(self, radius: float, bg_key: str, border_key: str, parent=None):
+    An optional title band (band_key/band_h) is merged into this paint: the
+    band's top corners follow the same antialiased arc as the surface (a QSS
+    border-top-radius on the title bar widget would alias), drawn as body fill
+    → top-only band path → border on top (same pattern as widget_card)."""
+
+    def __init__(self, radius: float, bg_key: str, border_key: str, parent=None,
+                 *, band_key: str | None = None, band_h: int = 0):
         super().__init__(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self._radius = radius
         self._bg_key = bg_key
         self._border_key = border_key
+        self._band_key = band_key
+        self._band_h = band_h
 
     def paintEvent(self, event):
         p = current_palette()
         painter = QPainter(self)
-        paint_rounded_surface(painter, self.rect(), self._radius,
-                              bg=p[self._bg_key], border=p[self._border_key])
+        if not self._band_key or self._band_h <= 0:
+            paint_rounded_surface(painter, self.rect(), self._radius,
+                                  bg=p[self._bg_key], border=p[self._border_key])
+            return
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        body = rounded_rect_path(
+            QRectF(self.rect()).adjusted(0.5, 0.5, -0.5, -0.5), self._radius)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(to_qcolor(p[self._bg_key]))
+        painter.drawPath(body)
+        painter.setBrush(to_qcolor(p[self._band_key]))
+        painter.drawPath(rounded_rect_path(
+            QRectF(0.5, 0.5, self.width() - 1.0, float(self._band_h)),
+            self._radius, top_only=True))
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.setPen(QPen(to_qcolor(p[self._border_key]), 1.0))
+        painter.drawPath(body)
 
 
 class _StyledDialog(QWidget):
@@ -333,11 +357,11 @@ def _im_qss(p: dict[str, str]) -> str:
     return f"""
     /* ── Surface ── (rounded body/border painted in _RoundedSurface.paintEvent) */
 
-    /* ── Title bar ── */
+    /* ── Title bar ── (band + rounded top corners painted into the root
+       _RoundedSurface, antialiased — QSS border-radius is not) */
     #ImTitleBar {{
-        background: {p['bg_titlebar']};
-        border-top-left-radius: {_rad(RAD_MD)}px;
-        border-top-right-radius: {_rad(RAD_MD)}px;
+        background: transparent;
+        border: none;
     }}
     #ImTitleLabel {{
         color: {p['text_muted']};
@@ -937,17 +961,21 @@ class DetailPanel(QWidget):
         root.addWidget(sep2)
         root.addSpacing(_dp(10))
 
-        # Actions — spaced, light, restrained
+        # Actions — spaced, light, restrained. The pill border is self-painted
+        # (AA) by HoverPillButton; QSS keeps only text styling (removed 1px
+        # border compensated with +1 padding so the box metrics are unchanged).
         row = QHBoxLayout()
         row.setSpacing(_dp(6))
         btn_style = (
-            f"background: transparent; border: 1px solid {p['line']}; "
-            f"border-radius: {_rad(RAD_SM)}px; color: {p['text_muted']}; font-size: {_fs('fs_10')}; "
-            f"padding: 4px 8px; letter-spacing: 0.5px;"
+            f"background: transparent; border: none; "
+            f"color: {p['text_muted']}; font-size: {_fs('fs_10')}; "
+            f"padding: 5px 9px; letter-spacing: 0.5px;"
         )
         for key, slot in [("copy", self._copy), ("im_copy_lora", self._copy_lora),
                           ("metadata_send_to_input", self._send), ("metadata_use_as_example", self._example)]:
-            btn = QPushButton(translator.t(key), self)
+            btn = HoverPillButton(translator.t(key), self)
+            btn.set_pill_colors(normal=None, hover=None,
+                                border='line', border_hover='line')
             btn.setCursor(Qt.CursorShape.PointingHandCursor)
             btn.setStyleSheet(btn_style)
             btn.clicked.connect(slot)
@@ -1192,9 +1220,10 @@ class ImageManagerWindow(QWidget):
         p = _p()
         self.setStyleSheet(_im_qss(p))
 
-        # Surface — rounded body/border is self-painted (see _RoundedSurface);
-        # QSS only styles the sub-controls below.
-        self._surface = _RoundedSurface(float(_rad(RAD_MD)), 'bg', 'line_strong', self)
+        # Surface — rounded body/border AND the title-bar band (top corners)
+        # are self-painted (see _RoundedSurface); QSS only styles sub-controls.
+        self._surface = _RoundedSurface(float(_rad(RAD_MD)), 'bg', 'line_strong', self,
+                                        band_key='bg_titlebar', band_h=_dp(38))
         self._surface.setObjectName("ImSurface")
         outer = QVBoxLayout(self)
         outer.setContentsMargins(_dp(4), _dp(4), _dp(4), _dp(4))

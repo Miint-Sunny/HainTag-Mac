@@ -42,6 +42,35 @@ def _has_visible_oc_content(entry: OCEntry) -> bool:
     return any(outfit.name.strip() or outfit.tags.strip() for outfit in entry.outfits)
 
 
+class _BubbleAvatar(QLabel):
+    """Circular avatar chip — the circle (fill + 1px border) is self-painted
+    with antialiasing; a QSS full border-radius circle rasterises with
+    stair-stepped arcs. QSS keeps `background: transparent; border: none`."""
+
+    def paintEvent(self, event):
+        pal = current_palette()
+        painter = QPainter(self)
+        paint_rounded_surface(
+            painter, self.rect(), (min(self.width(), self.height()) - 1) / 2.0,
+            bg=pal['accent_sub'], border=pal['accent_hover'],
+        )
+        painter.end()
+        super().paintEvent(event)
+
+
+class _BubbleStepper(QWidget):
+    """Stepper container — rounded surface (fill + border) self-painted with
+    antialiasing instead of QSS border-radius. QSS keeps the widget
+    transparent and only styles the children."""
+
+    def paintEvent(self, event):
+        pal = current_palette()
+        painter = QPainter(self)
+        paint_rounded_surface(painter, self.rect(), _rad(RAD_SM),
+                              bg=pal['bg_input'], border=pal['line'])
+        painter.end()
+
+
 class _OCBubble(QFrame):
     """HTML OCBubble equivalent, anchored near the titlebar chip."""
 
@@ -69,7 +98,7 @@ class _OCBubble(QFrame):
         head_layout = QHBoxLayout(head)
         head_layout.setContentsMargins(_dp(14), _dp(12), _dp(14), _dp(12))
         head_layout.setSpacing(_dp(10))
-        avatar = QLabel(head)
+        avatar = _BubbleAvatar(head)
         avatar.setObjectName("WorkbenchOCBubbleAvatar")
         avatar.setFixedSize(_dp(32), _dp(32))
         head_layout.addWidget(avatar)
@@ -119,7 +148,12 @@ class _OCBubble(QFrame):
             row.setContentsMargins(0, 0, 0, 0)
             row.setSpacing(_dp(4))
             for outfit in outfits:
-                btn = QPushButton(outfit.name, outfit_section)
+                # Pill surface self-painted (AA) by HoverPillButton; the active
+                # outfit picks the accent fill via the 'active' property.
+                btn = HoverPillButton(outfit.name, outfit_section)
+                btn.set_pill_colors(normal='bg_input', hover='bg_input',
+                                    active='accent_sub', border='line',
+                                    border_hover='line', border_active='accent_hover')
                 btn.setObjectName("WorkbenchOCOutfitPill")
                 btn.setProperty("active", outfit.active)
                 btn.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -155,9 +189,14 @@ class _OCBubble(QFrame):
         actions_layout = QHBoxLayout(actions)
         actions_layout.setContentsMargins(_dp(14), _dp(10), _dp(14), _dp(10))
         actions_layout.setSpacing(_dp(6))
-        edit_btn = QPushButton(self._t.t("workbench_edit_oc"), actions)
+        # Action buttons — pill surface self-painted (AA) by HoverPillButton.
+        edit_btn = HoverPillButton(self._t.t("workbench_edit_oc"), actions)
+        edit_btn.set_pill_colors(normal='accent_sub', hover='accent_sub',
+                                 border='accent_hover', border_hover='accent_hover')
         edit_btn.setObjectName("WorkbenchOCBubblePrimary")
-        remove_btn = QPushButton(self._t.t("workbench_remove_oc"), actions)
+        remove_btn = HoverPillButton(self._t.t("workbench_remove_oc"), actions)
+        remove_btn.set_pill_colors(normal='bg_input', hover='bg_input',
+                                   border='line', border_hover='line')
         remove_btn.setObjectName("WorkbenchOCBubbleButton")
         edit_btn.clicked.connect(lambda: self.edit_requested.emit(self._index, self.mapToGlobal(self.rect().bottomLeft())))
         remove_btn.clicked.connect(lambda: self.remove_requested.emit(self._index))
@@ -174,7 +213,8 @@ class _OCBubble(QFrame):
         return label
 
     def _stepper(self, label_text: str, value: int) -> tuple[QWidget, QSpinBox]:
-        box = QWidget(self)
+        # Rounded surface self-painted (AA) in _BubbleStepper.
+        box = _BubbleStepper(self)
         box.setObjectName("WorkbenchOCBubbleStepper")
         layout = QHBoxLayout(box)
         layout.setContentsMargins(_dp(8), _dp(4), _dp(8), _dp(4))
@@ -207,16 +247,22 @@ class _OCBubble(QFrame):
         )
 
     def apply_style(self) -> None:
+        # Avatar circle, stepper box and pill buttons are self-painted (AA) in
+        # _BubbleAvatar / _BubbleStepper / HoverPillButton — QSS keeps them
+        # transparent and only styles text. The buttons' removed 1px QSS border
+        # is compensated with +1 padding so their box metrics are unchanged.
+        # WorkbenchOCBubbleTag stays on QSS border-radius deliberately: at
+        # RAD_XS (2px) corner aliasing is not visible.
         pal = current_palette()
         self.setStyleSheet(
             f"QWidget#WorkbenchOCBubbleHead, QWidget#WorkbenchOCBubbleSection {{ background: transparent; border-bottom: 1px solid {pal['line']}; }}"
-            f"QLabel#WorkbenchOCBubbleAvatar {{ background: {pal['accent_sub']}; border: 1px solid {pal['accent_hover']}; border-radius: {_dp(16)}px; }}"
+            f"QLabel#WorkbenchOCBubbleAvatar {{ background: transparent; border: none; }}"
             f"QLabel#WorkbenchOCBubbleName {{ color: {pal['text']}; font-size: {_fs('fs_14')}; font-weight: 500; }}"
             f"QLabel#WorkbenchOCBubbleSub, QLabel#WorkbenchOCBubbleSectionLabel, QLabel#WorkbenchOCBubbleStepperLabel {{ color: {pal['text_label']}; font-size: {_fs('fs_10')}; }}"
-            f"QWidget#WorkbenchOCBubbleStepper {{ background: {pal['bg_input']}; border: 1px solid {pal['line']}; border-radius: {_rad(RAD_SM)}px; }}"
+            f"QWidget#WorkbenchOCBubbleStepper {{ background: transparent; border: none; }}"
             f"QSpinBox {{ background: transparent; color: {pal['text']}; border: none; font-size: {_fs('fs_12')}; }}"
-            f"QPushButton#WorkbenchOCOutfitPill, QPushButton#WorkbenchOCBubbleButton {{ background: {pal['bg_input']}; color: {pal['text_body']}; border: 1px solid {pal['line']}; border-radius: {_rad(RAD_SM)}px; padding: {_dp(4)}px {_dp(10)}px; font-size: {_fs('fs_11')}; }}"
-            f"QPushButton#WorkbenchOCOutfitPill[active=\"true\"], QPushButton#WorkbenchOCBubblePrimary {{ background: {pal['accent_sub']}; color: {pal['accent_text']}; border: 1px solid {pal['accent_hover']}; border-radius: {_rad(RAD_SM)}px; padding: {_dp(6)}px; font-size: {_fs('fs_11')}; }}"
+            f"QPushButton#WorkbenchOCOutfitPill, QPushButton#WorkbenchOCBubbleButton {{ background: transparent; color: {pal['text_body']}; border: none; padding: {_dp(4) + 1}px {_dp(10) + 1}px; font-size: {_fs('fs_11')}; }}"
+            f"QPushButton#WorkbenchOCOutfitPill[active=\"true\"], QPushButton#WorkbenchOCBubblePrimary {{ background: transparent; color: {pal['accent_text']}; border: none; padding: {_dp(6) + 1}px; font-size: {_fs('fs_11')}; }}"
             f"QLabel#WorkbenchOCBubbleTag {{ background: {pal['bg_input']}; color: {pal['text_body']}; border: 1px solid {pal['line']}; border-radius: {_rad(RAD_XS)}px; padding: {_dp(2)}px {_dp(6)}px; font-size: {_fs('fs_10')}; }}"
         )
 
