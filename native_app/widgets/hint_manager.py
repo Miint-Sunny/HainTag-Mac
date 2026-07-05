@@ -14,6 +14,7 @@ from ..i18n import Translator
 from ..storage import AppStorage
 from ..theme import _fs, current_palette
 from ..ui_tokens import _dp, _rad, RAD_SM, RAD_XS
+from .common import RoundedPanel
 
 
 class HintBubble(QWidget):
@@ -28,11 +29,14 @@ class HintBubble(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
 
         p = current_palette()
-        surface = QWidget(self)
-        surface.setStyleSheet(
-            f"background: {p['bg_surface']}; border: 1px solid {p['line_strong']}; "
-            f"border-radius: {_rad(RAD_SM)}px;"
-        )
+        # Bubble body — self-painted AA rounded surface (QSS border-radius
+        # corners alias). The bubble is a frameless top-level ToolTip window
+        # and already sets WA_TranslucentBackground above, so the rounded
+        # corners show through. The old 1px QSS border is now painted; content
+        # sits inside 6px+ layout margins, so the 1px layout-box change is
+        # imperceptible.
+        surface = RoundedPanel(self, bg='bg_surface', border='line_strong',
+                               radius_token=RAD_SM)
 
         layout = QHBoxLayout(surface)
         layout.setContentsMargins(_dp(10), _dp(6), _dp(10), _dp(6))
@@ -45,6 +49,8 @@ class HintBubble(QWidget):
         )
         layout.addWidget(lbl, 1)
 
+        # QSS radius kept intentionally: RAD_XS (2px) corners show no visible
+        # aliasing and the button is too short for the 9-patch slice.
         got_it_btn = QPushButton(ok_label, surface)
         got_it_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         got_it_btn.setStyleSheet(
