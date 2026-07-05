@@ -136,6 +136,25 @@ def _highlight_match(text: str, query: str) -> str:
     )
 
 
+class _CatDot(QLabel):
+    """Semantic-category colour dot — the circle is self-painted with
+    antialiasing; a QSS border-radius circle rasterises with stair-stepping.
+    The colour is a category hex (not a palette key); paint_rounded_surface
+    converts it through to_qcolor."""
+
+    def __init__(self, color: str, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._color = color
+
+    def paintEvent(self, event) -> None:
+        painter = QPainter(self)
+        paint_rounded_surface(
+            painter, self.rect(), (min(self.width(), self.height()) - 1) / 2.0,
+            bg=self._color,
+        )
+        painter.end()
+
+
 class _SectionLabel(QWidget):
     def __init__(self, text: str, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -166,11 +185,11 @@ class _SuggestionRow(QFrame):
         layout.setContentsMargins(_dp(10), _dp(7), _dp(10), _dp(7))
         layout.setSpacing(_dp(10))
 
-        dot = QLabel(self)
+        # Dot circle self-painted (AA) in _CatDot — no QSS border-radius.
+        color = _SEMANTIC_COLORS.get(_semantic_category(info), _SEMANTIC_COLORS["appearance"])
+        dot = _CatDot(color, self)
         dot.setObjectName("AcCatDot")
         dot.setFixedSize(_dp(8), _dp(8))
-        color = _SEMANTIC_COLORS.get(_semantic_category(info), _SEMANTIC_COLORS["appearance"])
-        dot.setStyleSheet(f"QLabel#AcCatDot {{ background: {color}; border-radius: {_dp(4)}px; }}")
         layout.addWidget(dot)
 
         name_wrap = QWidget(self)

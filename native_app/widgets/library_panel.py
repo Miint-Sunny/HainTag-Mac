@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import os
 
-from PyQt6.QtCore import Qt, pyqtSignal, QSize
-from PyQt6.QtGui import QPixmap
+from PyQt6.QtCore import Qt, pyqtSignal, QRectF, QSize
+from PyQt6.QtGui import QPainter, QPainterPath, QPen, QPixmap
 from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -18,11 +18,12 @@ from PyQt6.QtWidgets import (
 )
 
 from ..i18n import Translator
+from ..icons import paint_rounded_surface, to_qcolor
 from ..models import ArtistEntry, OCEntry
 from ..storage import AppStorage
 from ..theme import _fs, current_palette
 from ..ui_tokens import _dp, _rad, RAD_XS, RAD_SM
-from .common import DashedRectButton, ToggleSwitch
+from .common import DashedRectButton, HoverPillButton, ToggleSwitch
 
 SECTION_ARTIST = "artist"
 SECTION_OC = "oc"
@@ -52,15 +53,101 @@ def _arrow_style(p: dict) -> str:
     return f"color: {p['accent_text']}; font-size: {_fs('fs_9')}; background: transparent; border: none;"
 
 
-def _header_style(p: dict, expanded: bool) -> str:
-    if expanded:
-        return (f"background: {p['bg_surface']}; border: 1px solid {p['line']}; "
-                f"border-bottom: none; border-radius: {_rad(RAD_SM)}px {_rad(RAD_SM)}px 0 0;")
-    return f"background: {p['bg_surface']}; border: 1px solid {p['line']}; border-radius: {_rad(RAD_SM)}px;"
-
-
 def _dim_label_style(p: dict) -> str:
     return f"color: {p['text_dim']}; font-size: {_fs('fs_9')}; border: none; letter-spacing: 1px;"
+
+
+# ── Self-painted banner surfaces ──
+# QSS border-radius corners are rasterised WITHOUT antialiasing, so the banner
+# header/body surfaces are painted with QPainter instead. The widgets keep a
+# `background: transparent; border: none` stylesheet; QSS only styles children.
+
+class _BannerHeader(QWidget):
+    """Banner header row — AA rounded surface. Collapsed: all four corners
+    round. Expanded: top corners only, with an OPEN bottom edge (the QSS
+    version used `border-bottom: none`) so the body continues the outline."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._expanded = False
+
+    def set_expanded(self, expanded: bool) -> None:
+        if self._expanded != expanded:
+            self._expanded = expanded
+            self.update()
+
+    def paintEvent(self, event):
+        p = _p()
+        painter = QPainter(self)
+        if not self._expanded:
+            paint_rounded_surface(painter, self.rect(), _rad(RAD_SM),
+                                  bg=p['bg_surface'], border=p['line'])
+            painter.end()
+            return
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        r = float(_rad(RAD_SM))
+        # Bottom edge runs to the exact widget edge (no 0.5 inset): the body
+        # widget continues the same outline right below, so the fills and the
+        # left/right border strokes must meet without a half-pixel seam.
+        rect = QRectF(self.rect()).adjusted(0.5, 0.5, -0.5, 0.0)
+        x, y, w, h = rect.x(), rect.y(), rect.width(), rect.height()
+        path = QPainterPath()  # left edge ↑, top corners, right edge ↓ — open bottom
+        path.moveTo(x, y + h)
+        path.lineTo(x, y + r)
+        path.arcTo(x, y, 2 * r, 2 * r, 180.0, -90.0)
+        path.lineTo(x + w - r, y)
+        path.arcTo(x + w - 2 * r, y, 2 * r, 2 * r, 90.0, -90.0)
+        path.lineTo(x + w, y + h)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(to_qcolor(p['bg_surface']))
+        painter.drawPath(path)  # fill auto-closes across the open bottom
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.setPen(QPen(to_qcolor(p['line']), 1.0))
+        painter.drawPath(path)
+        painter.end()
+
+
+class _BannerBody(QWidget):
+    """Banner expanded body — AA rounded surface: bottom corners only, with an
+    OPEN top edge (the QSS version used `border-top: none`; the header above
+    owns the shared edge)."""
+
+    def paintEvent(self, event):
+        p = _p()
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        r = float(_rad(RAD_SM))
+        # Top edge runs to the exact widget edge (see _BannerHeader) — no seam.
+        rect = QRectF(self.rect()).adjusted(0.5, 0.0, -0.5, -0.5)
+        x, y, w, h = rect.x(), rect.y(), rect.width(), rect.height()
+        path = QPainterPath()  # right edge ↓, bottom corners, left edge ↑ — open top
+        path.moveTo(x + w, y)
+        path.lineTo(x + w, y + h - r)
+        path.arcTo(x + w - 2 * r, y + h - 2 * r, 2 * r, 2 * r, 0.0, -90.0)
+        path.lineTo(x + r, y + h)
+        path.arcTo(x, y + h - 2 * r, 2 * r, 2 * r, 270.0, -90.0)
+        path.lineTo(x, y)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(to_qcolor(p['bg_content']))
+        painter.drawPath(path)  # fill auto-closes across the open top
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.setPen(QPen(to_qcolor(p['line']), 1.0))
+        painter.drawPath(path)
+        painter.end()
+
+
+class _ThumbLabel(QLabel):
+    """Reference-image thumbnail tile — the rounded surface (fill + border) is
+    self-painted with antialiasing beneath the pixmap; QSS border-radius is
+    not antialiased."""
+
+    def paintEvent(self, event):
+        p = _p()
+        painter = QPainter(self)
+        paint_rounded_surface(painter, self.rect(), _rad(RAD_SM),
+                              bg=p['bg_content'], border=p['line'])
+        painter.end()
+        super().paintEvent(event)
 
 
 # ═══════════════════════════════════════════════════════════
@@ -127,16 +214,13 @@ class _RefImageGrid(QWidget):
             w = item.widget()
             if w and w is not self._add_btn:
                 w.deleteLater()
-        p = _p()
         insert_pos = 0
         for i, path in enumerate(self._paths):
             if self._vertical:
-                # Full-width image
-                thumb = QLabel(self)
+                # Full-width image — rounded tile self-painted (AA) in _ThumbLabel.
+                thumb = _ThumbLabel(self)
                 thumb.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                thumb.setStyleSheet(
-                    f"background: {p['bg_content']}; border: 1px solid {p['line']}; border-radius: {_rad(RAD_SM)}px;"
-                )
+                thumb.setStyleSheet("background: transparent; border: none;")
                 thumb.setCursor(Qt.CursorShape.PointingHandCursor)
                 if os.path.isfile(path):
                     pm = QPixmap(path).scaledToWidth(
@@ -148,14 +232,12 @@ class _RefImageGrid(QWidget):
                 thumb.mousePressEvent = lambda _, idx=i: self._remove_image(idx)
                 self._layout.insertWidget(insert_pos, thumb)
             else:
-                # Small thumbnail
+                # Small thumbnail — rounded tile self-painted (AA) in _ThumbLabel.
                 ts = self._thumb_size
-                thumb = QLabel(self)
+                thumb = _ThumbLabel(self)
                 thumb.setFixedSize(ts, ts)
                 thumb.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                thumb.setStyleSheet(
-                    f"background: {p['bg_content']}; border: 1px solid {p['line']}; border-radius: {_rad(RAD_SM)}px;"
-                )
+                thumb.setStyleSheet("background: transparent; border: none;")
                 thumb.setCursor(Qt.CursorShape.PointingHandCursor)
                 if os.path.isfile(path):
                     pm = QPixmap(path).scaled(QSize(ts - 4, ts - 4),
@@ -210,12 +292,10 @@ class ArtistBanner(QWidget):
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(0)
 
-        # ── Header (always visible) ──
-        self._header = QWidget(self)
+        # ── Header (always visible) — rounded surface self-painted (AA) ──
+        self._header = _BannerHeader(self)
         self._header.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._header.setStyleSheet(
-            f"background: {p['bg_surface']}; border: 1px solid {p['line']}; border-radius: {_rad(RAD_SM)}px;"
-        )
+        self._header.setStyleSheet("background: transparent; border: none;")
         hl = QHBoxLayout(self._header)
         hl.setContentsMargins(_dp(10), _dp(6), _dp(6), _dp(6))
         hl.setSpacing(_dp(8))
@@ -239,12 +319,9 @@ class ArtistBanner(QWidget):
         self._header.mousePressEvent = lambda e: self._toggle()
         root.addWidget(self._header)
 
-        # ── Body (expandable) — image-dominant layout ──
-        self._body = QWidget(self)
-        self._body.setStyleSheet(
-            f"background: {p['bg_content']}; border: 1px solid {p['line']}; "
-            f"border-top: none; border-radius: 0 0 {_rad(RAD_SM)}px {_rad(RAD_SM)}px;"
-        )
+        # ── Body (expandable) — rounded surface self-painted (AA) ──
+        self._body = _BannerBody(self)
+        self._body.setStyleSheet("background: transparent; border: none;")
         bl = QVBoxLayout(self._body)
         bl.setContentsMargins(_dp(8), _dp(6), _dp(8), _dp(8))
         bl.setSpacing(_dp(4))
@@ -289,13 +366,10 @@ class ArtistBanner(QWidget):
 
     def apply_theme(self):
         p = _p()
-        self._header.setStyleSheet(_header_style(p, self._expanded))
+        self._header.update()  # surface colours resolve from the palette at paint time
+        self._body.update()
         self._arrow.setStyleSheet(_arrow_style(p))
         self._name_label.setStyleSheet(f"color: {p['text']}; font-size: {_fs('fs_11')}; background: transparent; border: none;")
-        self._body.setStyleSheet(
-            f"background: {p['bg_content']}; border: 1px solid {p['line']}; "
-            f"border-top: none; border-radius: 0 0 {_rad(RAD_SM)}px {_rad(RAD_SM)}px;"
-        )
         self._name_edit.setStyleSheet(_input_style(p))
         self._string_edit.setStyleSheet(_input_style(p))
         self._ref_grid._apply_btn_style()
@@ -308,7 +382,7 @@ class ArtistBanner(QWidget):
         self._expanded = not self._expanded
         self._body.setVisible(self._expanded)
         self._arrow.setText("▾" if self._expanded else "▸")
-        self._header.setStyleSheet(_header_style(_p(), self._expanded))
+        self._header.set_expanded(self._expanded)
 
     def set_expanded(self, expanded: bool) -> None:
         if self._expanded == expanded:
@@ -436,12 +510,10 @@ class OCBanner(QWidget):
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(0)
 
-        # ── Header ──
-        self._header = QWidget(self)
+        # ── Header — rounded surface self-painted (AA) ──
+        self._header = _BannerHeader(self)
         self._header.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._header.setStyleSheet(
-            f"background: {p['bg_surface']}; border: 1px solid {p['line']}; border-radius: {_rad(RAD_SM)}px;"
-        )
+        self._header.setStyleSheet("background: transparent; border: none;")
         hl = QHBoxLayout(self._header)
         hl.setContentsMargins(_dp(10), _dp(6), _dp(6), _dp(6))
         hl.setSpacing(_dp(8))
@@ -470,12 +542,9 @@ class OCBanner(QWidget):
         self._header.mousePressEvent = lambda e: self._toggle()
         root.addWidget(self._header)
 
-        # ── Body ──
-        self._body = QWidget(self)
-        self._body.setStyleSheet(
-            f"background: {p['bg_content']}; border: 1px solid {p['line']}; "
-            f"border-top: none; border-radius: 0 0 {_rad(RAD_SM)}px {_rad(RAD_SM)}px;"
-        )
+        # ── Body — rounded surface self-painted (AA) ──
+        self._body = _BannerBody(self)
+        self._body.setStyleSheet("background: transparent; border: none;")
         bl = QVBoxLayout(self._body)
         bl.setContentsMargins(_dp(12), _dp(8), _dp(12), _dp(8))
         bl.setSpacing(_dp(6))
@@ -568,7 +637,7 @@ class OCBanner(QWidget):
         self._expanded = not self._expanded
         self._body.setVisible(self._expanded)
         self._arrow.setText("▾" if self._expanded else "▸")
-        self._header.setStyleSheet(_header_style(_p(), self._expanded))
+        self._header.set_expanded(self._expanded)
 
     def set_expanded(self, expanded: bool) -> None:
         if self._expanded == expanded:
@@ -577,13 +646,10 @@ class OCBanner(QWidget):
 
     def apply_theme(self):
         p = _p()
-        self._header.setStyleSheet(_header_style(p, self._expanded))
+        self._header.update()  # surface colours resolve from the palette at paint time
+        self._body.update()
         self._arrow.setStyleSheet(_arrow_style(p))
         self._name_label.setStyleSheet(f"color: {p['text']}; font-size: {_fs('fs_11')}; background: transparent; border: none;")
-        self._body.setStyleSheet(
-            f"background: {p['bg_content']}; border: 1px solid {p['line']}; "
-            f"border-top: none; border-radius: 0 0 {_rad(RAD_SM)}px {_rad(RAD_SM)}px;"
-        )
         self._name_edit.setStyleSheet(_input_style(p, 'fs_11', _pad(4, 8)))
         self._tags_edit.setStyleSheet(_input_style(p, 'fs_11', _pad(4, 8)))
         spin_style = _input_style(p, padding=_pad(2, 4))
@@ -717,12 +783,20 @@ class LibraryPanel(QWidget):
         tab_row.setContentsMargins(0, 0, 0, 0)
         tab_row.setSpacing(_dp(6))
 
-        self._artist_title_btn = QPushButton(self._header)
+        # Segmented tabs — pill surface self-painted (AA) by HoverPillButton;
+        # the active fill follows the 'active' property set in _apply_strip_styles.
+        self._artist_title_btn = HoverPillButton("", self._header)
+        self._artist_title_btn.set_pill_colors(
+            normal='bg_surface', hover='bg_surface', active='accent',
+            border='line', border_hover='line', border_active='accent')
         self._artist_title_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._artist_title_btn.clicked.connect(lambda: self.set_current_section(SECTION_ARTIST))
         tab_row.addWidget(self._artist_title_btn)
 
-        self._oc_title_btn = QPushButton(self._header)
+        self._oc_title_btn = HoverPillButton("", self._header)
+        self._oc_title_btn.set_pill_colors(
+            normal='bg_surface', hover='bg_surface', active='accent',
+            border='line', border_hover='line', border_active='accent')
         self._oc_title_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._oc_title_btn.clicked.connect(lambda: self.set_current_section(SECTION_OC))
         tab_row.addWidget(self._oc_title_btn)
@@ -744,7 +818,10 @@ class LibraryPanel(QWidget):
         al = QVBoxLayout(self._artist_body)
         al.setContentsMargins(0, 0, 0, 0)
         al.setSpacing(_dp(6))
-        self._add_artist_btn = QPushButton(self._artist_body)
+        # Full-width add button — pill surface self-painted (AA) by HoverPillButton.
+        self._add_artist_btn = HoverPillButton("", self._artist_body)
+        self._add_artist_btn.set_pill_colors(normal='bg_surface', hover='bg_surface',
+                                             border='line', border_hover='line')
         self._add_artist_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._add_artist_btn.clicked.connect(self._add_artist)
         al.addWidget(self._add_artist_btn)
@@ -757,7 +834,10 @@ class LibraryPanel(QWidget):
         ol = QVBoxLayout(self._oc_body)
         ol.setContentsMargins(0, 0, 0, 0)
         ol.setSpacing(_dp(6))
-        self._add_oc_btn = QPushButton(self._oc_body)
+        # Full-width add button — pill surface self-painted (AA) by HoverPillButton.
+        self._add_oc_btn = HoverPillButton("", self._oc_body)
+        self._add_oc_btn.set_pill_colors(normal='bg_surface', hover='bg_surface',
+                                         border='line', border_hover='line')
         self._add_oc_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._add_oc_btn.clicked.connect(self._add_oc)
         ol.addWidget(self._add_oc_btn)
@@ -830,27 +910,33 @@ class LibraryPanel(QWidget):
             banner.apply_theme()
 
     def _apply_strip_styles(self):
+        # Pill fill/border are self-painted (AA) by HoverPillButton, keyed off
+        # the 'active' property; QSS keeps only the text styling. The removed
+        # 1px QSS border is compensated with +1 padding so metrics are stable.
         p = _p()
+        pad = f"{_dp(6) + 1}px {_dp(8) + 1}px"
         active = (
-            f"background: {p['accent']}; color: {p['accent_text']}; border: 1px solid {p['accent']}; "
-            f"border-radius: {_rad(RAD_SM)}px; padding: {_dp(6)}px {_dp(8)}px; font-size: {_fs('fs_10')}; font-weight: bold;"
+            f"background: transparent; border: none; color: {p['accent_text']}; "
+            f"padding: {pad}; font-size: {_fs('fs_10')}; font-weight: bold;"
         )
         normal = (
-            f"background: {p['bg_surface']}; color: {p['text_dim']}; border: 1px solid {p['line']}; "
-            f"border-radius: {_rad(RAD_SM)}px; padding: {_dp(6)}px {_dp(8)}px; font-size: {_fs('fs_10')};"
+            f"background: transparent; border: none; color: {p['text_dim']}; "
+            f"padding: {pad}; font-size: {_fs('fs_10')};"
         )
-        self._artist_title_btn.setStyleSheet(
-            active if self._current_section == SECTION_ARTIST else normal
-        )
-        self._oc_title_btn.setStyleSheet(
-            active if self._current_section == SECTION_OC else normal
-        )
+        for btn, section in ((self._artist_title_btn, SECTION_ARTIST),
+                             (self._oc_title_btn, SECTION_OC)):
+            is_active = self._current_section == section
+            btn.setProperty('active', is_active)
+            btn.setStyleSheet(active if is_active else normal)
+            btn.update()
 
     def _apply_add_btn_styles(self):
+        # Pill fill/border self-painted (AA) by HoverPillButton; QSS keeps only
+        # text styling (removed 1px border compensated with +1 padding).
         p = _p()
         style = (
-            f"background: {p['bg_surface']}; color: {p['text']}; border: 1px solid {p['line']}; "
-            f"border-radius: {_rad(RAD_SM)}px; padding: {_dp(6)}px {_dp(8)}px; font-size: {_fs('fs_10')};"
+            f"background: transparent; border: none; color: {p['text']}; "
+            f"padding: {_dp(6) + 1}px {_dp(8) + 1}px; font-size: {_fs('fs_10')};"
         )
         self._add_artist_btn.setStyleSheet(style)
         self._add_oc_btn.setStyleSheet(style)
