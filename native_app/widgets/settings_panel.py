@@ -50,7 +50,7 @@ from ..ui_tokens import (
     _dp,
     _rad,
 )
-from .common import RoundHandleSlider, ToggleSwitch
+from .common import RoundHandleSlider, RoundedPanel, ToggleSwitch
 
 
 class SettingsPanel(QWidget):
@@ -411,9 +411,10 @@ class SettingsPanel(QWidget):
         dlg.setWindowTitle(title)
         dlg.setObjectName('PopupPanel')
         dlg.setFixedWidth(_dp(360))
+        # System-chromed dialog: the OS rounds the window itself, so the client
+        # area needs no QSS radius (whose corners would alias anyway).
         dlg.setStyleSheet(
-            f"QDialog#PopupPanel {{ background: {pal['bg_surface']}; "
-            f"border: 1px solid {pal['line_hover']}; border-radius: {_rad(RAD_MD)}px; }}"
+            f"QDialog#PopupPanel {{ background: {pal['bg_surface']}; border: none; }}"
         )
 
         layout = QVBoxLayout(dlg)
@@ -437,11 +438,8 @@ class SettingsPanel(QWidget):
         config_boxes: list[tuple[str, QCheckBox]] = []
 
         for group_key, scopes in self._IO_GROUPS:
-            card = QWidget(dlg)
-            card.setStyleSheet(
-                f"background: {pal['bg_input']}; "
-                f"border: 1px solid {pal['line']}; border-radius: {_rad(RAD_SM)}px;"
-            )
+            # Card surface self-painted (antialiased) by RoundedPanel.
+            card = RoundedPanel(dlg, bg='bg_input', border='line')
             card_layout = QVBoxLayout(card)
             card_layout.setContentsMargins(_dp(10), _dp(8), _dp(10), _dp(8))
             card_layout.setSpacing(_dp(4))

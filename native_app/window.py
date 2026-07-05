@@ -1935,10 +1935,12 @@ class MainWindow(QWidget):
         layout.addWidget(list_widget, 1)
         btn_row = QHBoxLayout()
         btn_row.addStretch()
-        cancel_btn = QPushButton(self._translator.t('cancel'), inner)
+        cancel_btn = HoverPillButton(self._translator.t('cancel'), inner)
         cancel_btn.setObjectName('PopupBtn')
-        ok_btn = QPushButton(self._translator.t('ok'), inner)
+        cancel_btn.set_pill_colors(normal='hover_bg_strong', hover='line_hover', border='line')
+        ok_btn = HoverPillButton(self._translator.t('ok'), inner)
         ok_btn.setObjectName('PopupBtn')
+        ok_btn.set_pill_colors(normal='hover_bg_strong', hover='line_hover', border='line')
         btn_row.addWidget(cancel_btn)
         btn_row.addWidget(ok_btn)
         layout.addLayout(btn_row)
@@ -2095,7 +2097,8 @@ class MainWindow(QWidget):
         popup = QWidget(self, Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint)
         popup.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         popup.setMinimumSize(min_width, min_height)
-        inner = QWidget(popup)
+        # Panel surface self-painted (antialiased) — QSS #PopupPanel stays transparent.
+        inner = RoundedPanel(popup, bg='bg_surface', border='line_hover', radius_token=RAD_MD)
         inner.setObjectName('PopupPanel')
         inner.setMinimumWidth(min_width)
 
@@ -2203,8 +2206,9 @@ class MainWindow(QWidget):
         header = QHBoxLayout(drag_bar)
         header.setContentsMargins(_dp(8), 0, _dp(4), 0)
         header.addStretch()
-        close_btn = QPushButton('×', drag_bar)
+        close_btn = HoverPillButton('×', drag_bar)
         close_btn.setObjectName('PopupClose')
+        close_btn.set_pill_colors(normal=None, hover='delete_hover')
         close_btn.clicked.connect(popup.close)
         header.addWidget(close_btn)
 
@@ -2287,8 +2291,9 @@ class MainWindow(QWidget):
         layout.addWidget(spin)
         btn_row = QHBoxLayout()
         btn_row.addStretch()
-        ok_btn = QPushButton(self._translator.t('ok'), inner)
+        ok_btn = HoverPillButton(self._translator.t('ok'), inner)
         ok_btn.setObjectName('PopupBtn')
+        ok_btn.set_pill_colors(normal='hover_bg_strong', hover='line_hover', border='line')
         ok_btn.clicked.connect(lambda: (callback(spin.value()), popup.close()))
         btn_row.addWidget(ok_btn)
         layout.addLayout(btn_row)
@@ -3638,15 +3643,9 @@ class MainWindow(QWidget):
         popup.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         popup.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
 
-        surface = QWidget(popup)
+        # Surface self-painted (antialiased) by RoundedPanel.
+        surface = RoundedPanel(popup, bg='bg', border='line_strong', radius_token=RAD_MD)
         surface.setObjectName("ChangelogSurface")
-        surface.setStyleSheet(f"""
-            #ChangelogSurface {{
-                background: {pal['bg']};
-                border: 1px solid {pal['line_strong']};
-                border-radius: {_rad(RAD_MD)}px;
-            }}
-        """)
 
         layout = QVBoxLayout(surface)
         layout.setContentsMargins(_dp(16), _dp(12), _dp(16), _dp(12))
@@ -3661,13 +3660,15 @@ class MainWindow(QWidget):
         text_edit = QTextEdit(surface)
         text_edit.setReadOnly(True)
         text_edit.setPlainText(content)
+        # Rounded body via the antialiased 9-patch surface (QSS radius aliases);
+        # border-width==slice eats the content box, so padding compensates.
+        from .qss_surfaces import surface_decl
+        _slice = _rad(RAD_SM) + 1
         text_edit.setStyleSheet(f"""
             QTextEdit {{
-                background: {pal['bg_content']};
+                {surface_decl(_rad(RAD_SM), pal['bg_content'], pal['line'])}
                 color: {pal['text_muted']};
-                border: 1px solid {pal['line']};
-                border-radius: {_rad(RAD_SM)}px;
-                padding: {_dp(8)}px;
+                padding: {max(0, _dp(8) + 1 - _slice)}px;
                 font-size: {_fs('fs_11')};
             }}
         """)

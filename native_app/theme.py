@@ -750,10 +750,11 @@ QSplitter::handle:vertical:hover {{
 }}
 
 /* ── Popup Panels (shared style for all floating panels) ── */
+/* Panel surface self-painted (antialiased) in RoundedPanel / _RoundedDialog;
+   QSS keeps the same 1px transparent box so the layout doesn't move. */
 #PopupPanel {{
-    background: {bg_surface};
-    border: 1px solid {line_hover};
-    border-radius: {rad_md};
+    background: transparent;
+    border: 1px solid transparent;
 }}
 
 #PopupPanel QLabel {{
@@ -761,6 +762,7 @@ QSplitter::handle:vertical:hover {{
     font-size: {fs_12};
 }}
 
+/* Close/OK/Cancel pill surfaces self-painted in HoverPillButton. */
 #PopupPanel QPushButton#PopupClose {{
     background: transparent;
     border: none;
@@ -770,25 +772,21 @@ QSplitter::handle:vertical:hover {{
     max-width: 20px;
     min-height: 20px;
     max-height: 20px;
-    border-radius: {rad_sm};
 }}
 
 #PopupPanel QPushButton#PopupClose:hover {{
-    background: {delete_hover};
     color: white;
 }}
 
 #PopupPanel QPushButton#PopupBtn {{
-    background: {hover_bg_strong};
-    border: 1px solid {line};
-    border-radius: {rad_sm};
+    background: transparent;
+    border: none;
     color: {text_muted};
-    padding: 6px 20px;
+    padding: 7px 21px;
     font-size: {fs_12};
 }}
 
 #PopupPanel QPushButton#PopupBtn:hover {{
-    background: {line_hover};
     color: {text_body};
 }}
 
@@ -1143,6 +1141,26 @@ QMenu::item {{
 }}
 QMenu::item:selected {{
     {surface_decl(r, p['hover_bg_strong'])}
+}}
+#PopupPanel QListWidget {{
+    {surface_decl(r, p['bg_input'], p['line'])}
+    padding: {max(0, px(4) + px(1) - s)}px;
+}}
+#PopupPanel QListWidget::item {{
+    {surface_decl(r, 'rgba(0, 0, 0, 0)')}
+    padding: {max(0, px(8) - s)}px {max(0, px(12) - s)}px;
+    margin: {px(2)}px 0;
+}}
+#PopupPanel QListWidget::item:hover {{
+    {surface_decl(r, p['hover_bg_strong'])}
+}}
+#PopupPanel QListWidget::item:selected {{
+    {surface_decl(r, p['accent'])}
+}}
+#PopupPanel QSpinBox {{
+    {surface_decl(r, p['bg_input'], p['line'])}
+    padding: {max(0, px(4) + px(1) - s)}px {max(0, px(8) + px(1) - s)}px;
+    min-height: {max(0, px(30) + 2 * px(5) - 2 * s)}px;
 }}
 """
 
