@@ -33,9 +33,11 @@ from PyQt6.QtWidgets import (
 )
 
 from ..i18n import Translator
+from ..icons import paint_rounded_surface
 from ..tag_dictionary import TagDictionary
 from ..theme import _fs, current_palette, is_theme_light
 from ..ui_tokens import _dp, _rad, RAD_SM, RAD_XS
+from .common import HoverPillButton, PillLabel
 from .text_context_menu import show_text_edit_context_menu
 
 # Regex to parse a single tag's weight: (tag:1.3) or plain tag
@@ -1196,7 +1198,7 @@ class _TagStreamView(QScrollArea):
             "QWidget#WorkbenchTagStreamInner { background: transparent; }"
             f"QLabel#WorkbenchTagEmpty {{ color: {pal['text_label']}; background: transparent; font-size: {_fs('fs_12')}; }}"
             f"QScrollBar:vertical {{ background: transparent; width: {_dp(8)}px; }}"
-            f"QScrollBar::handle:vertical {{ background: {pal['scrollbar']}; border-radius: {_dp(4)}px; min-height: {_dp(24)}px; }}"
+            f"QScrollBar::handle:vertical {{ background: {pal['scrollbar']}; border-radius: {_rad(RAD_XS)}px; min-height: {_dp(24)}px; }}"
             "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }"
         )
         if self._hover_tip is not None:
@@ -1216,6 +1218,21 @@ class _TagStreamView(QScrollArea):
             else:
                 result.append((stripped.strip('(){}[] '), None))
         return result
+
+
+class _RoundedOutputFrame(QFrame):
+    """Workbench output container: fill + border + rounded corners are
+    self-painted with antialiasing (QSS border-radius corners are not). The
+    QSS rule keeps an identically-sized transparent box (same margin + 1px
+    border) so the child layout does not move."""
+
+    def paintEvent(self, event) -> None:
+        pal = current_palette()
+        m = _dp(16)
+        painter = QPainter(self)
+        paint_rounded_surface(painter, self.rect().adjusted(m, 0, -m, 0), _rad(RAD_SM),
+                              bg=pal['bg_surface'], border=pal['line'])
+        painter.end()
 
 
 class OutputWidget(QWidget):
@@ -1250,12 +1267,12 @@ class OutputWidget(QWidget):
         tab_layout.addStretch(1)
         root.addWidget(self._tab_bar, 0)
 
-        self._output_frame = QFrame(self)
+        self._output_frame = _RoundedOutputFrame(self)
         self._output_frame.setObjectName("WorkbenchOutputFrame")
         output_frame_layout = QVBoxLayout(self._output_frame)
         output_frame_layout.setContentsMargins(0, 0, 0, 0)
         output_frame_layout.setSpacing(0)
-        self._status_pill = QLabel(self._output_frame)
+        self._status_pill = PillLabel("", self._output_frame, bg='bg_menu', border='line_hover')
         self._status_pill.setObjectName("WorkbenchStatusPill")
         self._status_pill.hide()
         self.stack = QStackedWidget(self._output_frame)
@@ -1297,15 +1314,21 @@ class OutputWidget(QWidget):
         copy_layout = QHBoxLayout(self._copy_bar)
         copy_layout.setContentsMargins(_dp(16), _dp(8), _dp(16), _dp(8))
         copy_layout.setSpacing(_dp(6))
-        self.edit_toggle_button = QPushButton(self._copy_bar)
+        # Surfaces self-painted by HoverPillButton (QSS border-radius corners
+        # alias); the QSS below only colours the glyphs.
+        self.edit_toggle_button = HoverPillButton("", self._copy_bar)
         self.edit_toggle_button.setObjectName("WorkbenchCopyButton")
         self.edit_toggle_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.edit_toggle_button.set_pill_colors(
+            normal='bg_surface', hover='hover_bg_strong', border='line_hover')
         self.edit_toggle_button.clicked.connect(self._toggle_edit_mode)
         copy_layout.addWidget(self.edit_toggle_button)
         copy_layout.addStretch(1)
-        self.copy_button = QPushButton(self._copy_bar)
+        self.copy_button = HoverPillButton("", self._copy_bar)
         self.copy_button.setObjectName("WorkbenchCopyButton")
         self.copy_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.copy_button.set_pill_colors(
+            normal='bg_surface', hover='hover_bg_strong', border='line_hover')
         self.copy_button.clicked.connect(self._copy_current)
         copy_layout.addWidget(self.copy_button)
         root.addWidget(self._copy_bar, 0)
@@ -1407,15 +1430,16 @@ class OutputWidget(QWidget):
         self.setStyleSheet(
             f"QWidget#WorkbenchOutput {{ background: {pal['bg_card_strip']}; }}"
             f"QWidget#WorkbenchTabs {{ background: {pal['bg_card_strip']}; }}"
-            f"QFrame#WorkbenchOutputFrame {{ background: {pal['bg_surface']}; border: 1px solid {pal['line']}; border-radius: {_rad(RAD_SM)}px; margin: 0px {_dp(16)}px 0px {_dp(16)}px; }}"
+            # Frame/pill/button surfaces are self-painted (antialiased); QSS keeps
+            # identically-sized transparent boxes so the layout doesn't move.
+            f"QFrame#WorkbenchOutputFrame {{ background: transparent; border: 1px solid transparent; margin: 0px {_dp(16)}px 0px {_dp(16)}px; }}"
             f"QWidget#WorkbenchCopyBar {{ background: {pal['bg_card_strip']}; }}"
-            f"QPushButton#WorkbenchCopyButton {{ background: {pal['bg_surface']}; color: {pal['text']}; border: 1px solid {pal['line_hover']}; border-radius: {_rad(RAD_SM)}px; padding: {_dp(5)}px {_dp(12)}px; font-size: {_fs('fs_12')}; }}"
-            f"QPushButton#WorkbenchCopyButton:hover {{ background: {pal['hover_bg_strong']}; }}"
-            f"QLabel#WorkbenchStatusPill {{ background: {pal['bg_menu']}; color: {pal['text_muted']}; border: 1px solid {pal['line_hover']}; border-radius: {_dp(10)}px; padding: {_dp(3)}px {_dp(8)}px; font-size: {_fs('fs_11')}; }}"
+            f"QPushButton#WorkbenchCopyButton {{ background: transparent; color: {pal['text']}; border: none; padding: {_dp(5) + 1}px {_dp(12) + 1}px; font-size: {_fs('fs_12')}; }}"
+            f"QLabel#WorkbenchStatusPill {{ background: transparent; color: {pal['text_muted']}; border: none; padding: {_dp(3) + 1}px {_dp(8) + 1}px; font-size: {_fs('fs_11')}; }}"
             f"QTextEdit[class=\"OutputEditor\"] {{ background: transparent; color: {pal['text']}; border: none; "
             f"font-size: {_fs('fs_12')}; selection-background-color: {pal['selection_bg']}; }}"
             f"QScrollBar:vertical {{ background: transparent; width: {_dp(8)}px; }}"
-            f"QScrollBar::handle:vertical {{ background: {pal['scrollbar']}; border-radius: {_dp(4)}px; min-height: {_dp(24)}px; }}"
+            f"QScrollBar::handle:vertical {{ background: {pal['scrollbar']}; border-radius: {_rad(RAD_XS)}px; min-height: {_dp(24)}px; }}"
             "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }"
         )
         self.full_tag_stream.apply_style()
@@ -1434,10 +1458,10 @@ class OutputWidget(QWidget):
         self._status_pill.setText(label)
         self._status_pill.setVisible(bool(label))
         dot_color = pal['accent_text'] if status == "running" else CATEGORY_COLORS.get("scene", pal['text']) if status == "done" else CATEGORY_COLORS.get("emotion", pal['text'])
+        # Capsule surface self-painted by PillLabel; QSS only styles the text.
         self._status_pill.setStyleSheet(
-            f"QLabel#WorkbenchStatusPill {{ background: {pal['bg_menu']}; color: {pal['text_muted']}; "
-            f"border: 1px solid {pal['line_hover']}; border-radius: {_dp(10)}px; padding: {_dp(3)}px {_dp(8)}px; font-size: {_fs('fs_11')}; }}"
-            f"QLabel#WorkbenchStatusPill {{ color: {dot_color}; }}"
+            f"QLabel#WorkbenchStatusPill {{ background: transparent; border: none; "
+            f"padding: {_dp(3) + 1}px {_dp(8) + 1}px; font-size: {_fs('fs_11')}; color: {dot_color}; }}"
         )
         self._position_status_pill()
 

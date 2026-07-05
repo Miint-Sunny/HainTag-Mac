@@ -258,6 +258,28 @@ class DashedRectButton(QPushButton):
         super().paintEvent(event)
 
 
+class PillLabel(QLabel):
+    """Capsule-shaped status label (radius == half height): the fill and
+    border are self-painted with antialiasing — a QSS border-radius capsule
+    rasterises with stair-stepped arcs. QSS on the label keeps
+    `background: transparent; border: none` and only sets text colour,
+    padding and font. Colours are palette KEYS resolved at paint time."""
+
+    def __init__(self, text: str = "", parent=None, *,
+                 bg: str = 'bg_menu', border: str = 'line_hover') -> None:
+        super().__init__(text, parent)
+        self._pill_bg = bg
+        self._pill_border = border
+
+    def paintEvent(self, event) -> None:
+        pal = current_palette()
+        painter = QPainter(self)
+        paint_rounded_surface(painter, self.rect(), (self.height() - 1) / 2.0,
+                              bg=pal[self._pill_bg], border=pal[self._pill_border])
+        painter.end()
+        super().paintEvent(event)
+
+
 class RoundHandleSlider(QSlider):
     """QSlider whose knob is a self-painted antialiased circle — QSS
     border-radius handles rasterise the circle with visible stair-stepping.

@@ -236,6 +236,6 @@ class WorkbenchTimeline(QWidget):
             f"QLabel#WorkbenchTimelineCardPrompt {{ color: {pal['text']}; font-size: {_fs('fs_11')}; }}"
             f"QLabel#WorkbenchTimelineCardMeta {{ color: {pal['text_label']}; font-size: {_fs('fs_9')}; }}"
             f"QScrollBar:horizontal {{ background: transparent; height: {_dp(8)}px; }}"
-            f"QScrollBar::handle:horizontal {{ background: {pal['scrollbar']}; border-radius: {_dp(4)}px; min-width: {_dp(24)}px; }}"
+            f"QScrollBar::handle:horizontal {{ background: {pal['scrollbar']}; border-radius: {_rad(RAD_XS)}px; min-width: {_dp(24)}px; }}"
         )
         self._rebuild_rail()
