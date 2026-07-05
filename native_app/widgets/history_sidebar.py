@@ -18,6 +18,7 @@ from PyQt6.QtWidgets import (
 
 from ..i18n import Translator
 from ..models import HistoryEntry
+from ..qss_surfaces import surface_decl
 from ..storage import AppStorage
 from ..theme import _fs, current_palette
 from ..ui_tokens import RAD_SM, RAD_XS, _dp, _rad
@@ -87,9 +88,16 @@ class _HistoryTextBlock(QWidget):
             f"color: {p['text']}; background: {p['accent']}; border: none; "
             f"border-radius: {_rad(RAD_XS)}px; padding: {_dp(3)}px {_dp(10)}px; font-size: {_fs('fs_9')};"
         )
+        # AA 9-patch surface replaces the QSS bg/border/radius trio (aliased
+        # corners). Its border-width is radius+1 and eats the content box, so
+        # padding compensates: new = old _dp(4) padding + old 1px border -
+        # (radius+1), floored at 0. QTextEdit-scoped so the editor's scrollbars
+        # keep their global styling.
+        r = _rad(RAD_SM)
         self._editor.setStyleSheet(
-            f"color: {p['text']}; font-size: {_fs('fs_10')}; background: {p['bg_card']}; "
-            f"border: 1px solid {p['line']}; border-radius: {_rad(RAD_SM)}px; padding: {_dp(4)}px;"
+            f"QTextEdit {{ color: {p['text']}; font-size: {_fs('fs_10')}; "
+            f"{surface_decl(r, p['bg_card'], p['line'])} "
+            f"padding: {max(0, _dp(4) + 1 - (r + 1))}px; }}"
         )
 
 

@@ -1,11 +1,29 @@
 from __future__ import annotations
 
 from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtGui import QPainter
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QScrollArea, QVBoxLayout, QWidget
 
+from ..icons import paint_rounded_surface
 from ..models import HistoryEntry
 from ..theme import _fs, current_palette
 from ..ui_tokens import RAD_SM, RAD_XS, _dp, _rad
+
+
+class _TimelineCard(QWidget):
+    """Timeline history card: the rounded fill+border is painted here with
+    QPainter antialiasing — QSS border-radius corners rasterise without AA.
+    The #WorkbenchTimelineCard QSS rule keeps only layout properties (a
+    transparent fill, a layout-neutral transparent 1px border and the min/max
+    widths). Colours are palette lookups at paint time so theme swaps stay
+    live."""
+
+    def paintEvent(self, event) -> None:
+        pal = current_palette()
+        painter = QPainter(self)
+        paint_rounded_surface(painter, self.rect(), _rad(RAD_SM),
+                              bg=pal['bg_surface'], border=pal['line'])
+        painter.end()
 
 
 class WorkbenchTimeline(QWidget):
@@ -171,7 +189,7 @@ class WorkbenchTimeline(QWidget):
             if widget is not None:
                 widget.deleteLater()
         for item in self._items[:18]:
-            card = QWidget(self._cards_host)
+            card = _TimelineCard(self._cards_host)
             card.setObjectName("WorkbenchTimelineCard")
             card.setFixedSize(_dp(180), _dp(82))
             card_layout = QVBoxLayout(card)
@@ -231,7 +249,7 @@ class WorkbenchTimeline(QWidget):
             f"QPushButton#WorkbenchTimelineAction:hover {{ color: {pal['accent_text']}; background: {pal['accent_sub']}; }}"
             f"QScrollArea#WorkbenchTimelineExpanded {{ background: {pal['bg_card_strip']}; border-top: 1px solid {pal['line']}; }}"
             f"QWidget#WorkbenchTimelineCards {{ background: {pal['bg_card_strip']}; }}"
-            f"QWidget#WorkbenchTimelineCard {{ background: {pal['bg_surface']}; border: 1px solid {pal['line']}; border-radius: {_rad(RAD_SM)}px; min-width: {_dp(160)}px; max-width: {_dp(180)}px; }}"
+            f"QWidget#WorkbenchTimelineCard {{ background: transparent; border: 1px solid transparent; min-width: {_dp(160)}px; max-width: {_dp(180)}px; }}"
             f"QLabel#WorkbenchTimelineCardTime {{ color: {pal['accent_text']}; font-size: {_fs('fs_10')}; }}"
             f"QLabel#WorkbenchTimelineCardPrompt {{ color: {pal['text']}; font-size: {_fs('fs_11')}; }}"
             f"QLabel#WorkbenchTimelineCardMeta {{ color: {pal['text_label']}; font-size: {_fs('fs_9')}; }}"

@@ -6,7 +6,6 @@ from PyQt6.QtGui import QGuiApplication
 from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
-    QPushButton,
     QScrollArea,
     QVBoxLayout,
     QWidget,
@@ -16,6 +15,7 @@ from ..i18n import Translator
 from ..models import SEND_MODE_ENTER
 from ..theme import _fs, current_palette
 from ..ui_tokens import RAD_SM, RAD_XS, _dp, _rad
+from .common import HoverPillButton, RoundedPanel
 
 def _shortcut_data(send_mode: str) -> list[tuple[str, list[tuple[str, str]]]]:
     send_label = "Enter" if send_mode == SEND_MODE_ENTER else "Ctrl+Enter"
@@ -68,10 +68,14 @@ class ShortcutsPanel(QWidget):
         p = current_palette()
         t = translator.t
 
-        surface = QWidget(self)
+        # Popup face: self-painted AA rounded fill+border (RoundedPanel) — QSS
+        # border-radius corners are not antialiased. The top-level popup already
+        # sets WA_TranslucentBackground above, so the corners stay see-through.
+        # The layout-neutral transparent border keeps the original 1px box model.
+        surface = RoundedPanel(self, bg='bg', border='line_strong',
+                               radius_token=RAD_SM)
         surface.setStyleSheet(
-            f"#ShortcutSurface {{ background: {p['bg']}; "
-            f"border: 1px solid {p['line_strong']}; border-radius: {_rad(RAD_SM)}px; }}"
+            "#ShortcutSurface { background: transparent; border: 1px solid transparent; }"
         )
         surface.setObjectName("ShortcutSurface")
 
@@ -140,11 +144,15 @@ class ShortcutsPanel(QWidget):
         main_layout.addWidget(scroll, 1)
 
         if on_tutorial is not None:
-            self.tutorial_button = QPushButton(t("tutorial_open"), surface)
+            # Self-painted AA pill (QSS border-radius corners alias); the fill
+            # is a palette KEY resolved at paint time. The original style had no
+            # :hover state, so hover keeps the same accent fill.
+            self.tutorial_button = HoverPillButton(t("tutorial_open"), surface)
+            self.tutorial_button.set_pill_colors(normal='accent', hover='accent')
             self.tutorial_button.setCursor(Qt.CursorShape.PointingHandCursor)
             self.tutorial_button.setStyleSheet(
-                f"color: {p['accent_text']}; background: {p['accent']}; border: none; "
-                f"border-radius: {_rad(RAD_SM)}px; padding: {_dp(5)}px {_dp(14)}px; font-size: {_fs('fs_10')};"
+                f"color: {p['accent_text']}; background: transparent; border: none; "
+                f"padding: {_dp(5)}px {_dp(14)}px; font-size: {_fs('fs_10')};"
             )
             self.tutorial_button.clicked.connect(lambda: (self.close(), on_tutorial()))
             main_layout.addWidget(self.tutorial_button, 0, Qt.AlignmentFlag.AlignRight)

@@ -18,6 +18,7 @@ from PyQt6.QtWidgets import (
 )
 
 from ..i18n import Translator
+from ..icons import paint_rounded_surface
 from ..metadata import MetadataReader, ImageMetadata
 from ..theme import current_palette
 from ..ui_tokens import CLS_FIELD_LABEL, CLS_METADATA_FRAME, CLS_METADATA_TEXT, RAD_SM, _dp, _rad
@@ -84,6 +85,26 @@ class _DropZonePage(QWidget):
                 break
 
 
+class _ThumbnailFrame(QLabel):
+    """Thumbnail box with a self-painted antialiased rounded border.
+
+    Deliberately NOT migrated with qss_surfaces.surface_decl: its 9-patch
+    border-width (radius+1 px) would shrink the QLabel content box, and the
+    pixmap QLabel paints on top is scaled to the full label size, so it would
+    cover the border zone and hide the rounded frame anyway. Painting the
+    frame here, before super() draws the pixmap, keeps the original QSS
+    layering (border under the content) with AA corners and no layout change.
+    The colour is a palette lookup at paint time so theme swaps stay live.
+    """
+
+    def paintEvent(self, event) -> None:
+        pal = current_palette()
+        painter = QPainter(self)
+        paint_rounded_surface(painter, self.rect(), _rad(RAD_SM), border=pal['line'])
+        painter.end()
+        super().paintEvent(event)
+
+
 class MetadataViewerWidget(QWidget):
     """Metadata viewer card.
 
@@ -127,11 +148,9 @@ class MetadataViewerWidget(QWidget):
         top_row = QHBoxLayout()
         top_row.setSpacing(_dp(8))
 
-        self._thumbnail = QLabel(self._content_page)
+        self._thumbnail = _ThumbnailFrame(self._content_page)
         self._thumbnail.setFixedSize(_dp(80), _dp(80))
         self._thumbnail.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        p = current_palette()
-        self._thumbnail.setStyleSheet(f"border: 1px solid {p['line']}; border-radius: {_rad(RAD_SM)}px;")
         top_row.addWidget(self._thumbnail)
 
         info_col = QVBoxLayout()
