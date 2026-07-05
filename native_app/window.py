@@ -12,7 +12,7 @@ if sys.platform == "win32":
     import ctypes
     from ctypes import wintypes
 
-from PyQt6.QtCore import QEasingCurve, QEvent, QPoint, QRect, QSize, Qt, QTimer, QPropertyAnimation, pyqtProperty
+from PyQt6.QtCore import QEasingCurve, QEvent, QPoint, QRect, QRectF, QSize, Qt, QTimer, QPropertyAnimation, pyqtProperty
 from PyQt6.QtGui import QAction, QColor, QCursor, QGuiApplication, QIcon, QKeySequence, QPainter, QShortcut
 from PyQt6.QtWidgets import (
     QApplication,
@@ -44,7 +44,7 @@ from .app_paths import app_data_dir
 from .error_reporting import report_error, safe_context_from_settings
 from .file_filters import config_filter, image_filter, json_filter, ttf_filter
 from .font_loader import build_body_font
-from .icons import pin_icon
+from .icons import paint_rounded_surface, pin_icon, rounded_rect_path, to_qcolor
 from .theme import _fs, current_palette
 from .i18n import Translator
 from .logic import build_messages, estimate_messages_tokens, normalize_api_base_url, validate_examples
@@ -186,7 +186,59 @@ def _resolve_tag_dictionary_csv() -> Path | None:
 
 
 class WindowSurface(QWidget):
-    pass
+    """Window shell surface: fill + 1px border + rounded corners are
+    self-painted with antialiasing — QSS border-radius corners are not.
+    On the macOS expanded-client-area path the NATIVE window mask rounds the
+    corners, so set_plain(True) switches to a plain square fill."""
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._plain = False
+
+    def set_plain(self, plain: bool) -> None:
+        self._plain = bool(plain)
+        self.update()
+
+    def paintEvent(self, event) -> None:
+        pal = current_palette()
+        painter = QPainter(self)
+        if self._plain:
+            painter.fillRect(self.rect(), to_qcolor(pal['bg']))
+        else:
+            paint_rounded_surface(painter, self.rect(), _rad(RAD_MD),
+                                  bg=pal['bg'], border=pal['line'])
+        painter.end()
+
+
+class _TitleBarSurface(QWidget):
+    """Custom title bar strip: fill with rounded TOP corners self-painted
+    (they form the window's visible top corners on the frameless path).
+    The 1px bottom hairline stays in QSS — straight lines don't alias."""
+
+    def paintEvent(self, event) -> None:
+        pal = current_palette()
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(to_qcolor(pal['bg_titlebar']))
+        painter.drawPath(rounded_rect_path(
+            QRectF(self.rect()), float(_rad(RAD_MD)), top_only=True))
+        painter.end()
+
+
+class _ContentHostSurface(QWidget):
+    """Content area under the title bar: fill with rounded BOTTOM corners
+    self-painted (they form the window's visible bottom corners)."""
+
+    def paintEvent(self, event) -> None:
+        pal = current_palette()
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(to_qcolor(pal['bg_content']))
+        painter.drawPath(rounded_rect_path(
+            QRectF(self.rect()), float(_rad(RAD_MD)), bottom_only=True))
+        painter.end()
 
 
 class SummaryDialog(QDialog):
@@ -314,9 +366,8 @@ class MainWindow(QWidget):
 
         self.surface = WindowSurface(self)
         self.surface.setObjectName('WindowSurface')
-        self.surface.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
-        self.title_bar = QWidget(self.surface)
+        self.title_bar = _TitleBarSurface(self.surface)
         self.title_bar.setObjectName('TitleBar')
         self.title_bar.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.title_bar.setCursor(Qt.CursorShape.OpenHandCursor)
@@ -328,7 +379,7 @@ class MainWindow(QWidget):
             self.title_bar.setAttribute(Qt.WidgetAttribute.WA_ContentsMarginsRespectsSafeArea, False)
             # Surface fills the window edge-to-edge; the native window mask rounds
             # the corners, so the inset chrome (1px border + 12px radius) must go.
-            self.surface.setStyleSheet('#WindowSurface { border: none; border-radius: 0px; }')
+            self.surface.set_plain(True)
         title_layout = QHBoxLayout(self.title_bar)
         title_layout.setContentsMargins(_dp(12), _dp(6), _dp(12), _dp(6))
         title_layout.setSpacing(2)
@@ -352,9 +403,8 @@ class MainWindow(QWidget):
         self._set_button_active(self.btn_pin, False)
         self._refresh_titlebar_pin_icon(False)
 
-        self.content_host = QWidget(self.surface)
+        self.content_host = _ContentHostSurface(self.surface)
         self.content_host.setObjectName('ContentHost')
-        self.content_host.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.workspace = Workspace(self.content_host)
         self.workspace.setObjectName('Workspace')
         self.workspace.set_dock_query(self._dock_query)
