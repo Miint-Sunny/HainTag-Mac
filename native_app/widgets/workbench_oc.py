@@ -21,7 +21,7 @@ from ..icons import paint_rounded_surface
 from ..models import OCEntry
 from ..theme import _fs, current_palette
 from ..ui_tokens import RAD_SM, RAD_XS, _dp, _rad
-from .common import DashedCircleButton
+from .common import DashedCircleButton, HoverPillButton
 from .text_context_menu import apply_app_menu_style
 
 
@@ -292,7 +292,10 @@ class WorkbenchOCStrip(QFrame):
         self._chips_host.setVisible(bool(self._entries))
         self.retranslate_ui()
         for source_index, entry in self._entries[:4]:
-            chip = QPushButton(self._chip_text(entry), self._chips_host)
+            # Chip surface self-painted (antialiased) by HoverPillButton.
+            chip = HoverPillButton(self._chip_text(entry), self._chips_host)
+            chip.set_pill_colors(normal='accent_sub', hover='accent',
+                                 border='accent', border_hover='accent_hover')
             chip.setObjectName("WorkbenchOCChip")
             chip.setProperty("sourceIndex", source_index)
             chip.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -445,10 +448,9 @@ class WorkbenchOCStrip(QFrame):
             "QFrame#WorkbenchOCStrip { background: transparent; border: none; }"
             f"QLabel#WorkbenchOCDivider {{ background: {pal['line']}; }}"
             f"QLabel#WorkbenchOCEmpty {{ color: {pal['text_label']}; font-style: italic; font-size: {_fs('fs_11')}; padding-left: {_dp(4)}px; }}"
-            f"QPushButton#WorkbenchOCChip {{ background: {pal['accent_sub']}; color: {pal['accent_text']}; "
-            f"border: 1px solid {pal['accent']}; border-radius: {_rad(RAD_SM)}px; padding: {_dp(2)}px {_dp(8)}px; "
+            f"QPushButton#WorkbenchOCChip {{ background: transparent; color: {pal['accent_text']}; "
+            f"border: none; padding: {_dp(2) + 1}px {_dp(8) + 1}px; "
             f"font-size: {_fs('fs_10')}; text-align: left; }}"
-            f"QPushButton#WorkbenchOCChip:hover {{ background: {pal['accent']}; border-color: {pal['accent_hover']}; }}"
             f"QPushButton#WorkbenchOCAdd {{ background: transparent; color: {pal['text_label']}; border: none; "
             f"padding: 0px; font-size: {_fs('fs_11')}; }}"
             f"QPushButton#WorkbenchOCAdd:hover {{ color: {pal['accent_text']}; }}"

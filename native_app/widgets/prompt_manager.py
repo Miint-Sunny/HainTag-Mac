@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from PyQt6.QtCore import QAbstractAnimation, QEasingCurve, QEvent, QPropertyAnimation, QSize, Qt, pyqtSignal
+from PyQt6.QtCore import QAbstractAnimation, QEasingCurve, QEvent, QPropertyAnimation, QRectF, QSize, Qt, pyqtSignal
+from PyQt6.QtGui import QPainter, QPen
 from PyQt6.QtWidgets import (
     QComboBox,
     QFrame,
@@ -33,8 +34,12 @@ from ..ui_tokens import (
     CLS_PROMPT_EXPAND_INDICATOR,
     CLS_PROMPT_NAME_PREVIEW,
     CLS_PROMPT_TEXT,
+    RAD_SM,
     _dp,
+    _rad,
 )
+from ..icons import rounded_rect_path, to_qcolor
+from ..theme import current_palette
 from .common import DashedRectButton, DragHandleLabel, HoverPillButton, ToggleSwitch
 from .text_context_menu import install_localized_context_menus
 
@@ -200,6 +205,38 @@ class PromptEntryWidget(QFrame):
             child = child.parentWidget()
         self.set_expanded(not self._expanded)
 
+    def paintEvent(self, event) -> None:
+        # Entry fill, expanded-header tint and hover border are self-painted
+        # with antialiasing — QSS border-radius corners are not. The QSS rule
+        # keeps an identically-sized transparent 1px-border box.
+        pal = current_palette()
+        radius = float(_rad(RAD_SM))
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        full = QRectF(self.rect()).adjusted(0.5, 0.5, -0.5, -0.5)
+        body = rounded_rect_path(full, radius)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(to_qcolor(pal['bg_prompt']))
+        painter.drawPath(body)
+        if self._expanded and self.header.isVisible():
+            hh = float(self.header.geometry().bottom() + 1)
+            painter.setBrush(to_qcolor(pal['hover_bg']))
+            painter.drawPath(rounded_rect_path(
+                QRectF(0.5, 0.5, self.width() - 1.0, hh - 0.5), radius, top_only=True))
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        border_key = 'line_hover' if self.underMouse() else 'line'
+        painter.setPen(QPen(to_qcolor(pal[border_key]), 1.0))
+        painter.drawPath(body)
+        painter.end()
+
+    def enterEvent(self, event) -> None:
+        self.update()
+        super().enterEvent(event)
+
+    def leaveEvent(self, event) -> None:
+        self.update()
+        super().leaveEvent(event)
+
     def _toggle_from_header_widget(self, event) -> None:
         self.set_expanded(not self._expanded)
 
@@ -213,6 +250,7 @@ class PromptEntryWidget(QFrame):
         self._update_indicator()
         self.style().unpolish(self)
         self.style().polish(self)
+        self.update()  # repaint the self-drawn expanded-header tint
         self._animation.stop()
         start_height = self._current_body_height
         if expanded:
