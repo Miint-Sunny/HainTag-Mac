@@ -12,8 +12,10 @@ from PyQt6.QtWidgets import (
 )
 
 from ..logic import estimate_text_tokens
+from ..qss_surfaces import surface_decl
 from ..theme import _fs, current_palette
 from ..ui_tokens import _dp, _rad, RAD_SM
+from .common import RoundedPanel
 from .text_context_menu import install_localized_context_menus
 
 
@@ -53,15 +55,16 @@ class PromptPreviewPopup(QWidget):
 
         p = current_palette()
 
-        self._surface = QWidget(self)
+        # Popup face: self-painted AA rounded fill+border (RoundedPanel) — QSS
+        # border-radius corners are not antialiased. The top-level popup already
+        # sets WA_TranslucentBackground above, so the corners stay see-through.
+        # The layout-neutral transparent border keeps the original 1px box model.
+        self._surface = RoundedPanel(self, bg='bg', border='line_strong',
+                                     radius_token=RAD_SM)
         self._surface.setObjectName("PreviewSurface")
-        self._surface.setStyleSheet(f"""
-            #PreviewSurface {{
-                background: {p['bg']};
-                border: 1px solid {p['line_strong']};
-                border-radius: {_rad(RAD_SM)}px;
-            }}
-        """)
+        self._surface.setStyleSheet(
+            "#PreviewSurface { background: transparent; border: 1px solid transparent; }"
+        )
 
         self._layout = QVBoxLayout(self._surface)
         self._layout.setContentsMargins(_dp(12), _dp(10), _dp(12), _dp(10))
@@ -108,6 +111,13 @@ class PromptPreviewPopup(QWidget):
         from ..theme import is_theme_light
         role_colors = ROLE_COLORS_LIGHT if is_theme_light() else ROLE_COLORS
 
+        # AA 9-patch surface for the message previews: its border-width is
+        # radius+1 and eats the content box, so padding compensates —
+        # new = old padding + old 1px border - (radius+1), floored at 0.
+        r = _rad(RAD_SM)
+        pad_v = max(0, 4 + 1 - (r + 1))
+        pad_h = max(0, 6 + 1 - (r + 1))
+
         total_tokens = 0
         for msg in messages:
             role = msg.get('role', 'user')
@@ -151,11 +161,9 @@ class PromptPreviewPopup(QWidget):
             preview.setFixedHeight(height)
             preview.setStyleSheet(f"""
                 QTextEdit {{
-                    background: {p['bg_content']};
+                    {surface_decl(r, p['bg_content'], p['line'])}
                     color: {p['text_muted']};
-                    border: 1px solid {p['line']};
-                    border-radius: {_rad(RAD_SM)}px;
-                    padding: 4px 6px;
+                    padding: {pad_v}px {pad_h}px;
                     font-size: {_fs('fs_11')};
                 }}
             """)
