@@ -407,6 +407,10 @@ class AppSettings:
     max_tokens: int = 64000
     stream: bool = True
     memory_mode: bool = True
+    # Mouse-wheel value adjustment on spinboxes/sliders/combos. Off by default:
+    # wheeling over a control while scrolling a list should scroll, not nudge
+    # the value (upstream issue #3).
+    wheel_adjust_enabled: bool = False
     send_mode: str = SEND_MODE_ENTER
     summary_prompt: str = DEFAULT_SUMMARY_PROMPT
     language: str = "zh-CN"
@@ -495,6 +499,7 @@ class AppSettings:
             max_tokens=clamp_int(data.get("max_tokens", data.get("maxTokens", 2048)), 2048, 1, 200000),
             stream=bool(data.get("stream", True)),
             memory_mode=bool(data.get("memory_mode", True)),
+            wheel_adjust_enabled=bool(data.get("wheel_adjust_enabled", False)),
             send_mode=str(data.get("send_mode", SEND_MODE_ENTER) or SEND_MODE_ENTER),
             summary_prompt=str(data.get("summary_prompt", DEFAULT_SUMMARY_PROMPT)),
             language=str(data.get("language", "zh-CN") or "zh-CN"),

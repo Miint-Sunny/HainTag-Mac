@@ -46,6 +46,7 @@ from ..ui_tokens import (
     SETTINGS_WIDTH,
     _dp,
 )
+from ..wheel_guard import set_wheel_adjust_enabled
 from .common import ToggleSwitch
 
 
@@ -159,7 +160,6 @@ class SettingsPanel(QWidget):
         self.top_k_spin.setRange(-1, 2000)
         self.top_k_spin.setSpecialValueText('--')
         self.top_k_spin.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.top_k_spin.wheelEvent = lambda e: e.ignore()
         self.top_k_spin.valueChanged.connect(self.settings_changed)
         self.body_layout.addWidget(self.top_k_spin)
 
@@ -172,12 +172,12 @@ class SettingsPanel(QWidget):
         self.max_tokens_spin.setRange(1, 200000)
         self.max_tokens_spin.setValue(2048)
         self.max_tokens_spin.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.max_tokens_spin.wheelEvent = lambda e: e.ignore()
         self.max_tokens_spin.valueChanged.connect(self.settings_changed)
         self.body_layout.addWidget(self.max_tokens_spin)
 
         self.stream_label, self.stream_toggle = self._add_toggle_row(body)
         self.memory_label, self.memory_toggle = self._add_toggle_row(body)
+        self.wheel_label, self.wheel_toggle = self._add_toggle_row(body)
 
         self.history_retention_label = self._add_label(body)
         self.history_retention_combo = QComboBox(body)
@@ -301,6 +301,9 @@ class SettingsPanel(QWidget):
 
         self.stream_toggle.toggled.connect(self.settings_changed)
         self.memory_toggle.toggled.connect(self.settings_changed)
+        # Wheel-adjust takes effect live (the app-wide guard reads the flag).
+        self.wheel_toggle.toggled.connect(self.settings_changed)
+        self.wheel_toggle.toggled.connect(set_wheel_adjust_enabled)
         self._tag_dictionary = None
         self.retranslate_ui()
 
@@ -339,7 +342,6 @@ class SettingsPanel(QWidget):
         slider.setRange(minimum, maximum)
         slider.setValue(default)
         slider.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        slider.wheelEvent = lambda e: e.ignore()
         self.body_layout.addWidget(slider)
         return slider, value_label, label
 
@@ -546,6 +548,7 @@ class SettingsPanel(QWidget):
             max_tokens=int(self.max_tokens_spin.value()),
             stream=self.stream_toggle.isChecked(),
             memory_mode=self.memory_toggle.isChecked(),
+            wheel_adjust_enabled=self.wheel_toggle.isChecked(),
             send_mode=str(self.send_mode_combo.currentData() or SEND_MODE_ENTER),
             summary_prompt=self.summary_prompt_edit.toPlainText(),
             language=str(self.language_combo.currentData()),
@@ -576,6 +579,8 @@ class SettingsPanel(QWidget):
         self.max_tokens_spin.setValue(settings.max_tokens)
         self.stream_toggle.setChecked(settings.stream)
         self.memory_toggle.setChecked(settings.memory_mode)
+        self.wheel_toggle.setChecked(settings.wheel_adjust_enabled)
+        set_wheel_adjust_enabled(settings.wheel_adjust_enabled)
         send_mode_index = max(0, self.send_mode_combo.findData(settings.send_mode))
         self.send_mode_combo.setCurrentIndex(send_mode_index)
         self.summary_prompt_edit.setPlainText(settings.summary_prompt)
@@ -653,6 +658,8 @@ class SettingsPanel(QWidget):
         self.stream_label.setToolTip(self._translator.t('tip_stream'))
         self.memory_label.setText(self._translator.t('memory_mode'))
         self.memory_label.setToolTip(self._translator.t('tip_memory'))
+        self.wheel_label.setText(self._translator.t('wheel_adjust'))
+        self.wheel_label.setToolTip(self._translator.t('tip_wheel_adjust'))
         current_history_retention = self.history_retention_combo.currentData()
         self.history_retention_label.setText(self._translator.t('history_retention'))
         self.history_retention_label.setToolTip(self._translator.t('tip_history_retention'))
