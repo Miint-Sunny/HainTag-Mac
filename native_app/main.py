@@ -10,6 +10,7 @@ from .error_reporting import format_exception_details, report_error, runtime_mod
 from .font_loader import build_body_font, load_app_fonts
 from .i18n import Translator
 from .storage import AppStorage
+from .combo_popup_fix import install as install_combo_popup_fix
 from .theme import control_surfaces_qss, generate_qss, scale_qss
 from .wheel_guard import install as install_wheel_guard, set_wheel_adjust_enabled
 from .window import MainWindow
@@ -69,6 +70,7 @@ def main() -> int:
         settings = initial_state.settings
         set_wheel_adjust_enabled(settings.wheel_adjust_enabled)
         install_wheel_guard(app)
+        install_combo_popup_fix(app)
         custom_family = storage.font_family_by_id(settings.custom_font_id) if settings.custom_font_id else ''
         app.setFont(build_body_font(settings.font_profile, settings.body_font_point_size, custom_family))
         custom_palette = None
