@@ -1820,7 +1820,10 @@ class _InterrogatorModeSwitch(QFrame):
         self.setFixedHeight(_dp(26))
         self.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(_dp(1), _dp(1), _dp(1), _dp(1))
+        # 2px inset, not 1: the frame's own 1px border eats the first row, so a
+        # 1px margin would leave the checked segment sitting on the border with
+        # no track showing above or below it.
+        layout.setContentsMargins(_dp(2), _dp(2), _dp(2), _dp(2))
         layout.setSpacing(0)
         self._local_btn = _SegmentButton(self)
         self._local_btn.setCheckable(True)
@@ -1831,7 +1834,7 @@ class _InterrogatorModeSwitch(QFrame):
         self._llm_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._llm_btn.clicked.connect(lambda: self.mode_changed.emit(1))
         for btn in (self._local_btn, self._llm_btn):
-            btn.setFixedHeight(_dp(24))
+            btn.setFixedHeight(_dp(22))
             btn.setMinimumWidth(_dp(72))
             btn.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
             layout.addWidget(btn)
@@ -1952,7 +1955,10 @@ class _LLMThumbButton(QFrame):
         self._remove_btn.clicked.connect(lambda: self.remove_requested.emit(self._index))
         self._active_dot = QLabel(self)
         self._active_dot.setFixedSize(_dp(4), _dp(4))
-        self._active_dot.move(max(0, (self.width() - self._active_dot.width()) // 2), self.height() - _dp(4))
+        # Clear of the frame's own stroke, which is 2px wide while selected —
+        # exactly when this dot is shown.
+        self._active_dot.move(max(0, (self.width() - self._active_dot.width()) // 2),
+                              self.height() - self._active_dot.height() - _dp(2))
         self.apply_theme()
         self.set_selected(False)
 
