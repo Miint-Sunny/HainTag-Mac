@@ -1428,12 +1428,16 @@ class OutputWidget(QWidget):
     def apply_workbench_style(self) -> None:
         pal = current_palette()
         self.setStyleSheet(
-            f"QWidget#WorkbenchOutput {{ background: {pal['bg_card_strip']}; }}"
-            f"QWidget#WorkbenchTabs {{ background: {pal['bg_card_strip']}; }}"
+            # The card body supplies the workbench tone. The tab bar's first row
+            # sits exactly on the card's header hairline, so an opaque fill here
+            # buried that line to a ghost; the copy bar was the same kind of
+            # square slab lower down. (No #WorkbenchOutput rule: OutputWidget is
+            # a QWidget subclass, so a QSS background on it never rendered.)
+            f"QWidget#WorkbenchTabs {{ background: transparent; }}"
             # Frame/pill/button surfaces are self-painted (antialiased); QSS keeps
             # identically-sized transparent boxes so the layout doesn't move.
             f"QFrame#WorkbenchOutputFrame {{ background: transparent; border: 1px solid transparent; margin: 0px {_dp(WB_INSET)}px 0px {_dp(WB_INSET)}px; }}"
-            f"QWidget#WorkbenchCopyBar {{ background: {pal['bg_card_strip']}; }}"
+            f"QWidget#WorkbenchCopyBar {{ background: transparent; }}"
             f"QPushButton#WorkbenchCopyButton {{ background: transparent; color: {pal['text']}; border: none; padding: {_dp(5) + 1}px {_dp(12) + 1}px; font-size: {_fs('fs_12')}; }}"
             f"QLabel#WorkbenchStatusPill {{ background: transparent; color: {pal['text_muted']}; border: none; padding: {_dp(3) + 1}px {_dp(8) + 1}px; font-size: {_fs('fs_11')}; }}"
             f"QTextEdit[class=\"OutputEditor\"] {{ background: transparent; color: {pal['text']}; border: none; "

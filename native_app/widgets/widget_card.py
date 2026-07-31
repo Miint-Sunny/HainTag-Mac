@@ -28,6 +28,7 @@ class WidgetCard(QFrame):
         # widget must be translucent to let the rounded corners show the parent.
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self._border_key = 'line_strong'  # main card overrides to 'line_hover'
+        self._body_fill_key = 'bg_card'   # main card overrides to 'bg_card_strip'
         self.setMouseTracking(True)
         self._min_size = min_size
         self.setMinimumSize(min_size)
@@ -218,6 +219,15 @@ class WidgetCard(QFrame):
         self._border_key = key
         self.update()
 
+    def set_body_fill_key(self, key: str) -> None:
+        """Palette key for the card body fill. The workbench card darkens its
+        whole interior with 'bg_card_strip' — painted here by the card so the
+        tone reaches the border and the rounded corners, instead of an inner
+        panel that would stop 10dp short and leave a lighter moat around
+        itself."""
+        self._body_fill_key = key
+        self.update()
+
     def paintEvent(self, event) -> None:
         pal = current_palette()
         radius = float(_rad(RAD_MD))
@@ -227,7 +237,7 @@ class WidgetCard(QFrame):
         body = rounded_rect_path(full, radius)
         # Card body fill
         painter.setPen(Qt.PenStyle.NoPen)
-        painter.setBrush(to_qcolor(pal['bg_card']))
+        painter.setBrush(to_qcolor(pal.get(self._body_fill_key, pal['bg_card'])))
         painter.drawPath(body)
         # Header strip (rounded top corners only), hover-lit
         sh = float(self._drag_strip_height)
