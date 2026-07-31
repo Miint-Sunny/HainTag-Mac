@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QScrollAre
 from ..icons import paint_rounded_surface
 from ..models import HistoryEntry
 from ..theme import _fs, current_palette
-from ..ui_tokens import RAD_SM, RAD_XS, _dp, _rad
+from ..ui_tokens import RAD_SM, RAD_XS, WB_INSET, _dp, _rad
 
 
 class _TimelineCard(QWidget):
@@ -22,7 +22,28 @@ class _TimelineCard(QWidget):
         pal = current_palette()
         painter = QPainter(self)
         paint_rounded_surface(painter, self.rect(), _rad(RAD_SM),
-                              bg=pal['bg_surface'], border=pal['line'])
+                              bg=pal['bg_prompt'], border=pal['line'])
+        painter.end()
+
+
+class _TimelineRow(QWidget):
+    """Clickable header of the recent-generation rail. The hover tint is
+    painted ON TOP of the rail's fill; a QSS `background` would REPLACE that
+    opaque fill with hover_bg — a 6%-alpha wash — and make the whole strip
+    see-through down to the translucent card."""
+
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
+        self.hoverable = False
+        self.setAttribute(Qt.WidgetAttribute.WA_Hover, True)
+
+    def paintEvent(self, event) -> None:
+        if not (self.hoverable and self.underMouse()):
+            return
+        pal = current_palette()
+        painter = QPainter(self)
+        paint_rounded_surface(painter, self.rect(), _rad(RAD_SM),
+                              bg=pal['hover_bg_strong'])
         painter.end()
 
 
@@ -40,13 +61,15 @@ class WorkbenchTimeline(QWidget):
         self._items: list[dict] = []
 
         root = QVBoxLayout(self)
-        root.setContentsMargins(0, 0, 0, 0)
+        # Same inset as the TAG well above and the prompt well below, so the
+        # rail is a box in the same column instead of a full-width slab.
+        root.setContentsMargins(_dp(WB_INSET), 0, _dp(WB_INSET), 0)
         root.setSpacing(0)
 
-        self._row = QWidget(self)
+        self._row = _TimelineRow(self)
         self._row.setObjectName("WorkbenchTimelineRow")
         row = QHBoxLayout(self._row)
-        row.setContentsMargins(_dp(14), _dp(8), _dp(14), _dp(8))
+        row.setContentsMargins(_dp(12), _dp(8), _dp(12), _dp(8))
         row.setSpacing(_dp(10))
 
         self._caret = QLabel("▶", self._row)
@@ -105,7 +128,7 @@ class WorkbenchTimeline(QWidget):
         self._cards_host = QWidget(self._expanded_row)
         self._cards_host.setObjectName("WorkbenchTimelineCards")
         self._expanded_layout = QHBoxLayout(self._cards_host)
-        self._expanded_layout.setContentsMargins(_dp(14), _dp(12), _dp(14), _dp(12))
+        self._expanded_layout.setContentsMargins(_dp(12), _dp(12), _dp(12), _dp(12))
         self._expanded_layout.setSpacing(_dp(8))
         self._expanded_row.setWidget(self._cards_host)
         self._expanded_row.hide()
@@ -117,12 +140,25 @@ class WorkbenchTimeline(QWidget):
         self.set_items([])
         self.apply_workbench_style()
 
+    def paintEvent(self, event) -> None:
+        # One raised surface behind both the header row and the drawer, so the
+        # collapsed and expanded states are the same object. Inset to match the
+        # wells above and below; the children stay transparent.
+        pal = current_palette()
+        painter = QPainter(self)
+        paint_rounded_surface(
+            painter, self.rect().adjusted(_dp(WB_INSET), 0, -_dp(WB_INSET), 0),
+            _rad(RAD_SM), bg=pal['bg_surface'], border=pal['line_hover'])
+        painter.end()
+
     def eventFilter(self, watched, event) -> bool:
-        if (watched is self._row
-                and event.type() == QEvent.Type.MouseButtonPress
-                and event.button() == Qt.MouseButton.LeftButton):
-            self.toggle_expanded()
-            return True
+        if watched is self._row:
+            if (event.type() == QEvent.Type.MouseButtonPress
+                    and event.button() == Qt.MouseButton.LeftButton):
+                self.toggle_expanded()
+                return True
+            if event.type() in (QEvent.Type.Enter, QEvent.Type.Leave):
+                self._row.update()  # repaint the self-drawn hover tint
         return super().eventFilter(watched, event)
 
     def set_items(self, items: list[dict]) -> None:
@@ -149,11 +185,10 @@ class WorkbenchTimeline(QWidget):
             self._current.setText("")
         self._row.setCursor(Qt.CursorShape.PointingHandCursor if has_items
                             else Qt.CursorShape.ArrowCursor)
-        # Drives the :hover fill, so an empty strip does not light up as if it
+        # Gates the hover tint, so an empty rail does not light up as if it
         # could be opened.
-        self._row.setProperty("hasItems", "true" if has_items else "false")
-        self._row.style().unpolish(self._row)
-        self._row.style().polish(self._row)
+        self._row.hoverable = has_items
+        self._row.update()
         if not has_items and self._expanded:
             self.toggle_expanded()
 
@@ -266,9 +301,11 @@ class WorkbenchTimeline(QWidget):
     def apply_workbench_style(self) -> None:
         pal = current_palette()
         self.setStyleSheet(
-            f"QWidget#WorkbenchTimeline {{ background: {pal['bg_card_strip']}; border-top: 1px solid {pal['line']}; border-bottom: 1px solid {pal['line']}; }}"
-            f"QWidget#WorkbenchTimelineRow {{ background: {pal['bg_surface']}; }}"
-            f"QWidget#WorkbenchTimelineRow[hasItems=\"true\"]:hover {{ background: {pal['hover_bg']}; }}"
+            # No rule for #WorkbenchTimeline: it is a QWidget subclass, so Qt
+            # never sets WA_StyledBackground and the fill/hairlines it used to
+            # declare never rendered. Its surface is painted in paintEvent.
+            # The row's fill and hover tint are painted too — see _TimelineRow.
+            f"QWidget#WorkbenchTimelineRow {{ background: transparent; }}"
             f"QLabel#WorkbenchTimelineCaret, QLabel#WorkbenchTimelineIcon {{ color: {pal['text_label']}; font-size: {_fs('fs_10')}; }}"
             f"QLabel#WorkbenchTimelineLabel {{ color: {pal['text_label']}; font-size: {_fs('fs_10')}; letter-spacing: 1px; }}"
             f"QLabel#WorkbenchTimelineCount {{ color: {pal['text_muted']}; font-size: {_fs('fs_10')}; }}"
@@ -279,8 +316,10 @@ class WorkbenchTimeline(QWidget):
             f"QLabel#WorkbenchTimelineCurrent {{ color: {pal['text_muted']}; font-size: {_fs('fs_12')}; }}"
             f"QPushButton#WorkbenchTimelineAction {{ background: transparent; color: {pal['text_label']}; border: none; border-radius: {_rad(RAD_XS)}px; padding: {_dp(2)}px {_dp(6)}px; font-size: {_fs('fs_11')}; }}"
             f"QPushButton#WorkbenchTimelineAction:hover {{ color: {pal['accent_text']}; background: {pal['accent_sub']}; }}"
-            f"QScrollArea#WorkbenchTimelineExpanded {{ background: {pal['bg_card_strip']}; border-top: 1px solid {pal['line']}; }}"
-            f"QWidget#WorkbenchTimelineCards {{ background: {pal['bg_card_strip']}; }}"
+            # Drawer sits on the rail's own surface; only the hairline that
+            # separates it from the header row is its own.
+            f"QScrollArea#WorkbenchTimelineExpanded {{ background: transparent; border-top: 1px solid {pal['line']}; }}"
+            f"QWidget#WorkbenchTimelineCards {{ background: transparent; }}"
             f"QWidget#WorkbenchTimelineCard {{ background: transparent; border: 1px solid transparent; min-width: {_dp(160)}px; max-width: {_dp(180)}px; }}"
             f"QLabel#WorkbenchTimelineCardTime {{ color: {pal['accent_text']}; font-size: {_fs('fs_10')}; }}"
             f"QLabel#WorkbenchTimelineCardPrompt {{ color: {pal['text']}; font-size: {_fs('fs_11')}; }}"
