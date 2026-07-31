@@ -1089,6 +1089,13 @@ def control_surfaces_qss(scale_percent: int = 100) -> str:
     in_pad_v = max(0, px(6) + px(1) - s)
     in_pad_h = max(0, px(8) + px(1) - s)
 
+    # Prompt-entry compact fields override the family with padding 4/8 +
+    # min-height 24; once padding alone can no longer absorb the slice, the
+    # rest comes off min-height (same trick as btn_mh above).
+    compact_pad_v = max(0, px(4) + px(1) - s)
+    compact_pad_h = max(0, px(8) + px(1) - s)
+    compact_mh = max(0, px(24) - 2 * max(0, s - (px(4) + px(1))))
+
     inputs_sel = ', '.join((
         'QLineEdit[class="FieldInput"]', 'QSpinBox[class="FieldSpin"]',
         'QComboBox[class="FieldCombo"]', 'QTextEdit[class="FieldInput"]',
@@ -1127,6 +1134,12 @@ QPushButton#SecondaryIconButton, QPushButton#PrimaryIconButton {{
 }}
 {inputs_focus_sel} {{
     {surface_decl(r, p['bg_input'], p['accent_hover'])}
+}}
+QFrame[class="PromptEntryFrame"] QLineEdit[class="FieldInput"],
+QFrame[class="PromptEntryFrame"] QSpinBox[class="FieldSpin"],
+QFrame[class="PromptEntryFrame"] QComboBox[class="FieldCombo"] {{
+    padding: {compact_pad_v}px {compact_pad_h}px;
+    min-height: {compact_mh}px;
 }}
 QMenu {{
     {surface_decl(r, p['bg_menu'], p['line_hover'])}
