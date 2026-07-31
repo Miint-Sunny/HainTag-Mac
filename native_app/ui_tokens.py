@@ -62,6 +62,12 @@ def _rad(px: int) -> int:
     return _dp(px)
 
 
+# Main workbench: distance from the workbench container's edge to every framed
+# box, action row and the splitter hairline. Written once here because it used
+# to be hand-synced across window.py, output_widget.py, input_widget.py and
+# workbench_timeline.py — and the timeline had drifted to 14.
+WB_INSET = 16
+
 WINDOW_RADIUS = 12
 WINDOW_SURFACE_MARGIN = 8
 WINDOW_EDGE_GAP = 10

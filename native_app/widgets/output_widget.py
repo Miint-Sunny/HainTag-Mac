@@ -36,7 +36,7 @@ from ..i18n import Translator
 from ..icons import paint_rounded_surface
 from ..tag_dictionary import TagDictionary
 from ..theme import _fs, current_palette, is_theme_light
-from ..ui_tokens import _dp, _rad, RAD_SM, RAD_XS
+from ..ui_tokens import _dp, _rad, RAD_SM, RAD_XS, WB_INSET
 from .common import HoverPillButton, PillLabel
 from .text_context_menu import show_text_edit_context_menu
 
@@ -1228,7 +1228,7 @@ class _RoundedOutputFrame(QFrame):
 
     def paintEvent(self, event) -> None:
         pal = current_palette()
-        m = _dp(16)
+        m = _dp(WB_INSET)
         painter = QPainter(self)
         paint_rounded_surface(painter, self.rect().adjusted(m, 0, -m, 0), _rad(RAD_SM),
                               bg=pal['bg_surface'], border=pal['line'])
@@ -1252,7 +1252,7 @@ class OutputWidget(QWidget):
         self._tab_bar = QWidget(self)
         self._tab_bar.setObjectName("WorkbenchTabs")
         tab_layout = QHBoxLayout(self._tab_bar)
-        tab_layout.setContentsMargins(_dp(16), _dp(12), _dp(16), 0)
+        tab_layout.setContentsMargins(_dp(WB_INSET), _dp(12), _dp(WB_INSET), 0)
         tab_layout.setSpacing(_dp(22))
         self.full_tab_button = QPushButton(self._tab_bar)
         self.full_tab_button.setCheckable(True)
@@ -1312,7 +1312,7 @@ class OutputWidget(QWidget):
         self._copy_bar = QWidget(self)
         self._copy_bar.setObjectName("WorkbenchCopyBar")
         copy_layout = QHBoxLayout(self._copy_bar)
-        copy_layout.setContentsMargins(_dp(16), _dp(8), _dp(16), _dp(8))
+        copy_layout.setContentsMargins(_dp(WB_INSET), _dp(8), _dp(WB_INSET), _dp(8))
         copy_layout.setSpacing(_dp(6))
         # Surfaces self-painted by HoverPillButton (QSS border-radius corners
         # alias); the QSS below only colours the glyphs.
@@ -1432,7 +1432,7 @@ class OutputWidget(QWidget):
             f"QWidget#WorkbenchTabs {{ background: {pal['bg_card_strip']}; }}"
             # Frame/pill/button surfaces are self-painted (antialiased); QSS keeps
             # identically-sized transparent boxes so the layout doesn't move.
-            f"QFrame#WorkbenchOutputFrame {{ background: transparent; border: 1px solid transparent; margin: 0px {_dp(16)}px 0px {_dp(16)}px; }}"
+            f"QFrame#WorkbenchOutputFrame {{ background: transparent; border: 1px solid transparent; margin: 0px {_dp(WB_INSET)}px 0px {_dp(WB_INSET)}px; }}"
             f"QWidget#WorkbenchCopyBar {{ background: {pal['bg_card_strip']}; }}"
             f"QPushButton#WorkbenchCopyButton {{ background: transparent; color: {pal['text']}; border: none; padding: {_dp(5) + 1}px {_dp(12) + 1}px; font-size: {_fs('fs_12')}; }}"
             f"QLabel#WorkbenchStatusPill {{ background: transparent; color: {pal['text_muted']}; border: none; padding: {_dp(3) + 1}px {_dp(8) + 1}px; font-size: {_fs('fs_11')}; }}"

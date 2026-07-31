@@ -8,7 +8,7 @@ from ..i18n import Translator
 from ..icons import paint_rounded_surface
 from ..models import SEND_MODE_CTRL_ENTER, SEND_MODE_ENTER
 from ..theme import _fs, current_palette
-from ..ui_tokens import CLS_FIELD_LABEL, CLS_INPUT_EDITOR, RAD_SM, _dp, _rad
+from ..ui_tokens import CLS_FIELD_LABEL, CLS_INPUT_EDITOR, RAD_SM, WB_INSET, _dp, _rad
 from .common import HoverPillButton
 
 
@@ -27,7 +27,7 @@ class _RoundedInputFrame(QWidget):
         painter = QPainter(self)
         paint_rounded_surface(
             painter, self.rect(), _rad(RAD_SM), bg=pal['bg_input'],
-            border=pal['line_strong'] if self.focused else pal['line'],
+            border=pal['accent_hover'] if self.focused else pal['line'],
         )
         painter.end()
 
@@ -46,7 +46,7 @@ class InputWidget(QWidget):
         # Side inset matches the workbench output frame (output_widget.py's
         # _RoundedOutputFrame insets itself by the same 16), so the editor box
         # and the TAG box line up instead of the editor running edge to edge.
-        root.setContentsMargins(_dp(16), 0, _dp(16), 0)
+        root.setContentsMargins(_dp(WB_INSET), 0, _dp(WB_INSET), 0)
         root.setSpacing(0)
 
         self.editor_frame = _RoundedInputFrame(self)

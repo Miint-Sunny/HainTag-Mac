@@ -84,6 +84,7 @@ from .ui_tokens import (
     SAVE_DEBOUNCE_MS,
     SETTINGS_ANIM_DURATION,
     TITLEBAR_HEIGHT,
+    WB_INSET,
     WINDOW_EDGE_GAP,
     WINDOW_SURFACE_MARGIN,
     WINDOW_VISIBLE_RESIZE_BAND,
@@ -538,7 +539,9 @@ class MainWindow(QWidget):
         self._main_bottom_panel.setObjectName("WorkbenchBottomPanel")
         bottom_layout = QVBoxLayout(self._main_bottom_panel)
         bottom_layout.setContentsMargins(0, 0, 0, 0)
-        bottom_layout.setSpacing(0)
+        # The recent rail and the prompt well are two separate boxes now; with
+        # 0 here they fused into one slab.
+        bottom_layout.setSpacing(_dp(10))
         self.workbench_timeline = WorkbenchTimeline(self._translator, self._main_bottom_panel)
         self.workbench_timeline.view_all_requested.connect(
             lambda: self._open_history_panel(toggle=True, anchor=QCursor.pos())
@@ -553,7 +556,7 @@ class MainWindow(QWidget):
         self._main_splitter.setStretchFactor(1, 1)
         self.input_widget.setMinimumHeight(_dp(80))
         self.output_widget.setMinimumHeight(_dp(120))
-        self._main_bottom_panel.setMinimumHeight(_dp(168))
+        self._main_bottom_panel.setMinimumHeight(_dp(178))
         self._main_input_on_top = False
         main_root.addWidget(self._main_splitter, 1)
         self.main_card.set_content(self._main_container)
@@ -993,7 +996,10 @@ class MainWindow(QWidget):
                 f"QWidget#WorkbenchMainContainer {{ background: transparent; }}"
                 f"QWidget#WorkbenchBottomPanel {{ background: transparent; }}"
                 f"QSplitter#WorkbenchMainSplitter {{ background: transparent; }}"
-                f"QSplitter#WorkbenchMainSplitter::handle:vertical {{ background: {pal['line']}; height: {_dp(1)}px; margin: {_dp(4)}px {_dp(16)}px; }}"
+                f"QSplitter#WorkbenchMainSplitter::handle:vertical {{ background: {pal['line']}; height: {_dp(1)}px; margin: {_dp(4)}px {_dp(WB_INSET)}px; }}"
+                # Base rule would grow the handle to 2px on hover and reflow the
+                # split; keep the accent tint, keep the height.
+                f"QSplitter#WorkbenchMainSplitter::handle:vertical:hover {{ background: {pal['accent_handle']}; height: {_dp(1)}px; }}"
                 f"QPushButton#WorkbenchDividerHandle {{ background: transparent; color: {pal['text_muted']}; border: none; font-size: {_fs('fs_10')}; padding: 0px; }}"
                 f"QPushButton#WorkbenchDividerHandle:hover {{ color: {pal['text']}; }}"
                 f"QLabel#WorkbenchRightClickHint {{ color: {pal['text_label']}; background: transparent; font-size: {_fs('fs_9')}; font-style: italic; }}"
@@ -1005,7 +1011,7 @@ class MainWindow(QWidget):
         if hasattr(self, "output_widget") and self.output_widget is not None:
             self.output_widget.setMinimumHeight(_dp(120))
         if hasattr(self, "_main_bottom_panel") and self._main_bottom_panel is not None:
-            self._main_bottom_panel.setMinimumHeight(_dp(168))
+            self._main_bottom_panel.setMinimumHeight(_dp(178))
         if hasattr(self, "_swap_btn") and self._swap_btn is not None:
             self._swap_btn.setFixedSize(_dp(28), _dp(16))
         if hasattr(self, "_destroy_combo") and self._destroy_combo is not None:
