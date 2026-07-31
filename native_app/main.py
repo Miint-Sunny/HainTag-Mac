@@ -11,6 +11,7 @@ from .font_loader import build_body_font, load_app_fonts
 from .i18n import Translator
 from .storage import AppStorage
 from .theme import generate_qss, scale_qss
+from .wheel_guard import install as install_wheel_guard, set_wheel_adjust_enabled
 from .window import MainWindow
 
 
@@ -66,6 +67,8 @@ def main() -> int:
         load_app_fonts(resources_dir)
         storage.load_imported_fonts()
         settings = initial_state.settings
+        set_wheel_adjust_enabled(settings.wheel_adjust_enabled)
+        install_wheel_guard(app)
         custom_family = storage.font_family_by_id(settings.custom_font_id) if settings.custom_font_id else ''
         app.setFont(build_body_font(settings.font_profile, settings.body_font_point_size, custom_family))
         custom_palette = None

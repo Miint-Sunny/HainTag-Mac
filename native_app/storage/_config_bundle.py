@@ -47,6 +47,7 @@ _SETTINGS_PAGE_SCOPES = {
 _SETTING_FIELDS_BY_SCOPE = {
     CONFIG_SCOPE_APPEARANCE: {
         "language",
+        "wheel_adjust_enabled",
         "ui_scale_percent",
         "body_font_point_size",
         "font_profile",
