@@ -229,6 +229,21 @@ class _TitleBarSurface(QWidget):
         painter.end()
 
 
+class _WorkbenchSurface(QWidget):
+    """Workbench block inside the main card: fill self-painted with
+    antialiased corners, so it does not read as a square panel sitting inside
+    the card's rounded body. Everything stacked on top of it (bottom panel,
+    splitter, input widget, footer) shares this one fill and stays
+    transparent, otherwise their square corners would cover these."""
+
+    def paintEvent(self, event) -> None:
+        pal = current_palette()
+        painter = QPainter(self)
+        paint_rounded_surface(painter, self.rect(), _rad(RAD_SM),
+                              bg=pal['bg_card_strip'])
+        painter.end()
+
+
 class _ContentHostSurface(QWidget):
     """Content area under the title bar: fill with rounded BOTTOM corners
     self-painted (they form the window's visible bottom corners)."""
@@ -507,7 +522,7 @@ class MainWindow(QWidget):
         self._workbench_oc_strip.open_library_requested.connect(lambda pos: self._open_library_section("oc", toggle=True, anchor=pos))
         self._workbench_oc_strip.oc_changed.connect(self._update_oc_entry)
         self.main_card.set_title_extra_widget(self._workbench_oc_strip)
-        self._main_container = QWidget(self.main_card)
+        self._main_container = _WorkbenchSurface(self.main_card)
         self._main_container.setObjectName("WorkbenchMainContainer")
         self._main_container.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self._main_container.customContextMenuRequested.connect(self._show_workbench_menu)
@@ -973,9 +988,11 @@ class MainWindow(QWidget):
             )
         if hasattr(self, "_main_container") and self._main_container is not None:
             self._main_container.setStyleSheet(
-                f"QWidget#WorkbenchMainContainer {{ background: {pal['bg_card_strip']}; }}"
-                f"QWidget#WorkbenchBottomPanel {{ background: {pal['bg_card_strip']}; }}"
-                f"QSplitter#WorkbenchMainSplitter {{ background: {pal['bg_card_strip']}; }}"
+                # Fill comes from _WorkbenchSurface.paintEvent; these stay
+                # transparent so their square corners cannot cover its rounded ones.
+                f"QWidget#WorkbenchMainContainer {{ background: transparent; }}"
+                f"QWidget#WorkbenchBottomPanel {{ background: transparent; }}"
+                f"QSplitter#WorkbenchMainSplitter {{ background: transparent; }}"
                 f"QSplitter#WorkbenchMainSplitter::handle:vertical {{ background: {pal['line']}; height: {_dp(1)}px; margin: {_dp(4)}px {_dp(16)}px; }}"
                 f"QPushButton#WorkbenchDividerHandle {{ background: transparent; color: {pal['text_muted']}; border: none; font-size: {_fs('fs_10')}; padding: 0px; }}"
                 f"QPushButton#WorkbenchDividerHandle:hover {{ color: {pal['text']}; }}"

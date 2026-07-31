@@ -211,14 +211,16 @@ class InputWidget(QWidget):
     def apply_workbench_style(self) -> None:
         p = current_palette()
         self.setStyleSheet(
-            f"InputWidget {{ background: {p['bg_card_strip']}; }}"
+            # Transparent: the workbench surface below already fills this area,
+            # and an opaque box here would square off its rounded bottom corners.
+            f"InputWidget {{ background: transparent; }}"
             # Surface self-painted by _RoundedInputFrame; the old padding is now
             # that frame's layout margins, so the editor itself stays bare.
             f"QTextEdit#WorkbenchInputEditor {{ background: transparent; border: none; padding: 0px; "
             f"color: {p['text']}; "
             f"selection-background-color: {p['selection_bg']}; "
             f"font-size: {_fs('fs_12')}; }}"
-            f"QWidget#WorkbenchFooter {{ background: {p['bg_card_strip']}; }}"
+            f"QWidget#WorkbenchFooter {{ background: transparent; }}"
             f"QLabel#TokenLabel {{ color: {p['text_muted']}; font-size: {_fs('fs_12')}; }}"
             f"QPushButton#WorkbenchFooterButton {{ background: transparent; color: {p['text']}; border: none; }}"
             f"QPushButton#WorkbenchFooterButton:disabled {{ color: {p['disabled_text']}; }}"
