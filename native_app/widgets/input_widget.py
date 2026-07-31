@@ -1,14 +1,35 @@
 from __future__ import annotations
 
-from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QKeyEvent, QTextCursor
+from PyQt6.QtCore import QEvent, Qt, pyqtSignal
+from PyQt6.QtGui import QKeyEvent, QPainter, QTextCursor
 from PyQt6.QtWidgets import QHBoxLayout, QLabel, QTextEdit, QVBoxLayout, QWidget
 
 from ..i18n import Translator
+from ..icons import paint_rounded_surface
 from ..models import SEND_MODE_CTRL_ENTER, SEND_MODE_ENTER
 from ..theme import _fs, current_palette
 from ..ui_tokens import CLS_FIELD_LABEL, CLS_INPUT_EDITOR, RAD_SM, _dp, _rad
 from .common import HoverPillButton
+
+
+class _RoundedInputFrame(QWidget):
+    """Workbench input container: fill + border + rounded corners are
+    self-painted with antialiasing (QSS border-radius corners are not). Twin of
+    output_widget._RoundedOutputFrame. The editor sits inside on layout margins
+    that replace its old QSS padding, so it never covers the border."""
+
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
+        self.focused = False
+
+    def paintEvent(self, event) -> None:
+        pal = current_palette()
+        painter = QPainter(self)
+        paint_rounded_surface(
+            painter, self.rect(), _rad(RAD_SM), bg=pal['bg_input'],
+            border=pal['line_strong'] if self.focused else pal['line'],
+        )
+        painter.end()
 
 
 class InputWidget(QWidget):
@@ -22,18 +43,28 @@ class InputWidget(QWidget):
         self._tag_dictionary = None
 
         root = QVBoxLayout(self)
-        root.setContentsMargins(0, 0, 0, 0)
+        # Side inset matches the workbench output frame (output_widget.py's
+        # _RoundedOutputFrame insets itself by the same 16), so the editor box
+        # and the TAG box line up instead of the editor running edge to edge.
+        root.setContentsMargins(_dp(16), 0, _dp(16), 0)
         root.setSpacing(0)
 
-        self.editor = QTextEdit(self)
+        self.editor_frame = _RoundedInputFrame(self)
+        frame_layout = QVBoxLayout(self.editor_frame)
+        frame_layout.setContentsMargins(_dp(12), _dp(10), _dp(12), _dp(10))
+        frame_layout.setSpacing(0)
+        self.editor = QTextEdit(self.editor_frame)
         self.editor.setProperty('class', CLS_INPUT_EDITOR)
         self.editor.setObjectName("WorkbenchInputEditor")
-        root.addWidget(self.editor, 1)
+        self.editor.installEventFilter(self)
+        frame_layout.addWidget(self.editor, 1)
+        root.addWidget(self.editor_frame, 1)
 
         self.action_bar = QWidget(self)
         self.action_bar.setObjectName('WorkbenchFooter')
         footer = QHBoxLayout(self.action_bar)
-        footer.setContentsMargins(_dp(16), _dp(10), _dp(16), _dp(12))
+        # Horizontal inset already supplied by root's margins.
+        footer.setContentsMargins(0, _dp(10), 0, _dp(12))
         footer.setSpacing(_dp(8))
 
         self.token_label = QLabel(self.action_bar)
@@ -169,14 +200,24 @@ class InputWidget(QWidget):
             f"color: {color or p['text_muted']}; font-size: {_fs('fs_12')};"
         )
 
+    def eventFilter(self, watched, event) -> bool:
+        if watched is self.editor and event.type() in (
+                QEvent.Type.FocusIn, QEvent.Type.FocusOut):
+            # Repaint the self-drawn surface for its focus border.
+            self.editor_frame.focused = event.type() == QEvent.Type.FocusIn
+            self.editor_frame.update()
+        return super().eventFilter(watched, event)
+
     def apply_workbench_style(self) -> None:
         p = current_palette()
         self.setStyleSheet(
             f"InputWidget {{ background: {p['bg_card_strip']}; }}"
-            f"QTextEdit#WorkbenchInputEditor {{ background: {p['bg_input']}; color: {p['text']}; border: 1px solid {p['line']}; "
-            f"border-radius: {_rad(RAD_SM)}px; padding: {_dp(10)}px {_dp(12)}px; selection-background-color: {p['selection_bg']}; "
+            # Surface self-painted by _RoundedInputFrame; the old padding is now
+            # that frame's layout margins, so the editor itself stays bare.
+            f"QTextEdit#WorkbenchInputEditor {{ background: transparent; border: none; padding: 0px; "
+            f"color: {p['text']}; "
+            f"selection-background-color: {p['selection_bg']}; "
             f"font-size: {_fs('fs_12')}; }}"
-            f"QTextEdit#WorkbenchInputEditor:focus {{ border-color: {p['line_strong']}; }}"
             f"QWidget#WorkbenchFooter {{ background: {p['bg_card_strip']}; }}"
             f"QLabel#TokenLabel {{ color: {p['text_muted']}; font-size: {_fs('fs_12')}; }}"
             f"QPushButton#WorkbenchFooterButton {{ background: transparent; color: {p['text']}; border: none; }}"
