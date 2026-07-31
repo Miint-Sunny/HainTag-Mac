@@ -193,7 +193,6 @@ QWidget {{
 
 #TitleBar {{
     background: transparent;
-    border-bottom: 1px solid {line};
 }}
 
 /* ── Title Bar & Dock Buttons ── */

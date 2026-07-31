@@ -213,7 +213,8 @@ class WindowSurface(QWidget):
 class _TitleBarSurface(QWidget):
     """Custom title bar strip: fill with rounded TOP corners self-painted
     (they form the window's visible top corners on the frameless path).
-    The 1px bottom hairline stays in QSS — straight lines don't alias."""
+    The fill spans the whole rect, so the separator below it has to be drawn
+    here too — a QSS border-bottom would land under the fill."""
 
     def paintEvent(self, event) -> None:
         pal = current_palette()
@@ -223,6 +224,8 @@ class _TitleBarSurface(QWidget):
         painter.setBrush(to_qcolor(pal['bg_titlebar']))
         painter.drawPath(rounded_rect_path(
             QRectF(self.rect()), float(_rad(RAD_MD)), top_only=True))
+        painter.fillRect(QRectF(0.0, self.height() - 1.0, float(self.width()), 1.0),
+                         to_qcolor(pal['line']))
         painter.end()
 
 
