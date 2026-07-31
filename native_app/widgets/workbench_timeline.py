@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import QEvent, Qt, pyqtSignal
 from PyQt6.QtGui import QPainter
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QScrollArea, QVBoxLayout, QWidget
 
@@ -111,9 +111,19 @@ class WorkbenchTimeline(QWidget):
         self._expanded_row.hide()
         root.addWidget(self._expanded_row, 0)
 
-        self._row.mousePressEvent = lambda event: self.toggle_expanded()
+        # Event filter rather than reassigning _row.mousePressEvent, which
+        # swallowed every press on the strip regardless of button.
+        self._row.installEventFilter(self)
         self.set_items([])
         self.apply_workbench_style()
+
+    def eventFilter(self, watched, event) -> bool:
+        if (watched is self._row
+                and event.type() == QEvent.Type.MouseButtonPress
+                and event.button() == Qt.MouseButton.LeftButton):
+            self.toggle_expanded()
+            return True
+        return super().eventFilter(watched, event)
 
     def set_items(self, items: list[dict]) -> None:
         self._items = list(items or [])
@@ -122,10 +132,30 @@ class WorkbenchTimeline(QWidget):
             current = next((item for item in self._items if item.get("current")), self._items[0])
             prompt = str(current.get("prompt", "") or "")
             self._current.setText(f"● \"{prompt}\"")
-        else:
-            self._current.setText("● \"\"")
+        self._apply_empty_state()
         self._rebuild_rail()
         self._rebuild_cards()
+
+    def _apply_empty_state(self) -> None:
+        """With no history the caret, both dividers and the (zero-width) dot
+        rail have nothing to show — left visible they rendered as two touching
+        separators and a stray '● ""'. The current-prompt label stays visible
+        but empty: it carries the row's stretch, and hiding it would let the
+        remaining labels spread across the strip."""
+        has_items = bool(self._items)
+        for widget in (self._caret, self._divider_a, self._rail, self._divider_b):
+            widget.setVisible(has_items)
+        if not has_items:
+            self._current.setText("")
+        self._row.setCursor(Qt.CursorShape.PointingHandCursor if has_items
+                            else Qt.CursorShape.ArrowCursor)
+        # Drives the :hover fill, so an empty strip does not light up as if it
+        # could be opened.
+        self._row.setProperty("hasItems", "true" if has_items else "false")
+        self._row.style().unpolish(self._row)
+        self._row.style().polish(self._row)
+        if not has_items and self._expanded:
+            self.toggle_expanded()
 
     def set_history_entries(self, entries: list[HistoryEntry]) -> None:
         items: list[dict] = []
@@ -178,6 +208,8 @@ class WorkbenchTimeline(QWidget):
         self._rebuild_cards()
 
     def toggle_expanded(self) -> None:
+        if not self._expanded and not self._items:
+            return  # nothing to expand into but a 112px-tall empty band
         self._expanded = not self._expanded
         self._caret.setText("▼" if self._expanded else "▶")
         self._expanded_row.setVisible(self._expanded)
@@ -236,7 +268,7 @@ class WorkbenchTimeline(QWidget):
         self.setStyleSheet(
             f"QWidget#WorkbenchTimeline {{ background: {pal['bg_card_strip']}; border-top: 1px solid {pal['line']}; border-bottom: 1px solid {pal['line']}; }}"
             f"QWidget#WorkbenchTimelineRow {{ background: {pal['bg_surface']}; }}"
-            f"QWidget#WorkbenchTimelineRow:hover {{ background: {pal['hover_bg']}; }}"
+            f"QWidget#WorkbenchTimelineRow[hasItems=\"true\"]:hover {{ background: {pal['hover_bg']}; }}"
             f"QLabel#WorkbenchTimelineCaret, QLabel#WorkbenchTimelineIcon {{ color: {pal['text_label']}; font-size: {_fs('fs_10')}; }}"
             f"QLabel#WorkbenchTimelineLabel {{ color: {pal['text_label']}; font-size: {_fs('fs_10')}; letter-spacing: 1px; }}"
             f"QLabel#WorkbenchTimelineCount {{ color: {pal['text_muted']}; font-size: {_fs('fs_10')}; }}"
