@@ -498,7 +498,7 @@ class MainWindow(QWidget):
             f"QPushButton#WidgetCloseBtn:hover, QPushButton#WidgetPinBtn:hover {{ color: {pal['text']}; }}"
             f"QPushButton#WidgetResizeHandle {{ color: {pal['text_label']}; background: transparent; border: none; font-size: {_fs('fs_9')}; }}"
         )
-        self.main_card.set_content_margins(0, None, 0, 0)
+        self.main_card.set_content_margins(_dp(10), None, _dp(10), _dp(10))
         self._workbench_oc_strip = WorkbenchOCStrip(self._translator, self.main_card)
         self._workbench_oc_strip.set_entries(ocs)
         self._workbench_oc_strip.add_requested.connect(self._show_oc_add_menu)
